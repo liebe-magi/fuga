@@ -10,7 +10,9 @@ use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use termion::{color, style};
 
+/// The application's name.
 pub const APP_NAME: &str = "fugue";
+/// The application's version.
 pub const VERSION: &str = "v0.0.1";
 
 /// The type of the target file or directory
@@ -111,12 +113,12 @@ pub fn get_version() -> String {
     return version_text;
 }
 
-/// Check the target file or directory is exist.
+/// Check if the target file or directory is exist.
 fn is_exist(path: &str) -> bool {
     return Path::new(path).exists();
 }
 
-/// Check the target is file.
+/// Check if the target is file.
 fn is_file(path: &str) -> bool {
     return metadata(path).unwrap().is_file();
 }
