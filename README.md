@@ -17,7 +17,7 @@ A CLI tool to operate files or directories in 2 steps.
 $ cargo install fugue-box
 ```
 
-以下のコマンドでバージョン情報が表示されればインストール完了です。
+- 以下のコマンドでバージョン情報が表示されればインストール完了です。
 
 ```
 $ fugue -V
