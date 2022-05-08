@@ -16,3 +16,29 @@ A CLI tool to operate files or directories in 2 steps.
 ```
 $ cargo install fugue-box
 ```
+
+以下のコマンドでバージョン情報が表示されればインストール完了です。
+
+```
+$ fugue -V
+fugue v0.0.1
+```
+
+## 📦 USAGE
+
+```
+USAGE:
+    fugue <SUBCOMMAND>
+
+OPTIONS:
+    -h, --help       Print help information
+    -V, --version    Print version information
+
+SUBCOMMANDS:
+    copy       Copy the marked files or directories
+    help       Print this message or the help of the given subcommand(s)
+    link       Make a symbolic link of the marked files or directories
+    mark       Set the path of the target file or directory
+    move       Move the marked files or directories
+    version    Show the version of the tool
+```
