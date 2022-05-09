@@ -19,19 +19,19 @@ struct AppArg {
 enum Action {
     /// Set the path of the target file or directory
     Mark(Mark),
-    /// Copy the marked files or directories
+    /// Copy the marked file or directory
     Copy {
-        /// The name for the copied files or directories
+        /// The name for the copied file or directory
         name: Option<String>,
     },
-    /// Move the marked files or directories
+    /// Move the marked file or directory
     Move {
-        /// The name for the moved files or directories
+        /// The name for the moved file or directory
         name: Option<String>,
     },
-    /// Make a symbolic link of the marked files or directories
+    /// Make a symbolic link to the marked file or directory
     Link {
-        /// The name for the linked files or directories
+        /// The name for the symbolic link
         name: Option<String>,
     },
     /// Show the version of the tool
@@ -45,13 +45,14 @@ enum Action {
                 .args(&["target", "show", "reset"]),
         ))]
 struct Mark {
-    /// The path that you want to mark
+    /// The path you want to mark
     target: Option<String>,
 
     /// Show the marked path
     #[clap(short = 's', long = "show")]
     show: bool,
 
+    /// Reset the marked path
     #[clap(short = 'r', long = "reset")]
     reset: bool,
 }
