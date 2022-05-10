@@ -1,3 +1,6 @@
+![Crates.io](https://img.shields.io/crates/v/fugue-box)
+![Crates.io](https://img.shields.io/crates/l/fugue-box)
+
 # 📦 FUGUE 📦
 
 A CLI tool to operate files or directories in 2 steps.
