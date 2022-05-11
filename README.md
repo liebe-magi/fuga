@@ -1,5 +1,6 @@
 [![Crates.io](https://img.shields.io/crates/v/fugue-box)](https://crates.io/crates/fugue-box)
 [![Crates.io](https://img.shields.io/crates/l/fugue-box)](https://github.com/MagicalLiebe/fugue/blob/main/LICENSE)
+[![CI](https://github.com/MagicalLiebe/fugue/actions/workflows/rust_ci.yml/badge.svg?branch=develop)](https://github.com/MagicalLiebe/fugue/actions/workflows/rust_ci.yml)
 
 # 📦 FUGUE 📦
 
