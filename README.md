@@ -13,12 +13,25 @@ A CLI tool to operate files or directories in 2 steps.
 
 ## 📦 INSTALLATION
 
+### ビルド済みバイナリ
+
+- 以下のアーキテクチャ用のバイナリを[releases](https://github.com/MagicalLiebe/fugue/releases)に準備しています。
+
+  - aarch64-apple-darwin (Mac - Apple Chip)
+  - x86_64-apple-darwin (Mac - Intel Chip)
+  - x86_64-unknown-linux-gnu (Linux - Intel Chip)
+
+- お使いのPCにあったバイナリをパスの通ったディレクトリに配置してください。
+
+### Cargoによるビルド
+
 - `cargo`コマンドによりビルドすることでインストールできます。
-  - ビルド済みのバイナリファイルは今後準備する予定です。
 
 ```
 $ cargo install fugue-box
 ```
+
+### コマンドの確認
 
 - 以下のコマンドでバージョン情報が表示されればインストール完了です。
 
