@@ -1,4 +1,4 @@
-name: rust_ci
+name: CI
 
 on: [push, pull_request]
 
