@@ -1,5 +1,5 @@
 use dirs::config_dir;
-use fs_extra;
+
 use indicatif::{ProgressBar, ProgressStyle};
 use serde_derive::{Deserialize, Serialize};
 use std::cell::RefCell;
@@ -13,7 +13,7 @@ use termion::{color, style};
 /// The application's name.
 pub const APP_NAME: &str = "fugue";
 /// The application's version.
-pub const VERSION: &str = "v0.0.1";
+pub const VERSION: &str = "v0.0.2";
 
 /// The type of the target file or directory
 pub enum TargetType {
@@ -43,7 +43,7 @@ pub struct Data {
 
 /// Get the path of the config file.
 fn get_config_path() -> Option<PathBuf> {
-    return config_dir();
+    config_dir()
 }
 
 /// Get the bold text.
@@ -110,7 +110,7 @@ pub fn store_path(target: &str) -> Result<(), confy::ConfyError> {
 pub fn get_version() -> String {
     let version = env!("CARGO_PKG_VERSION");
     let version_text = format!("v{}", version);
-    return version_text;
+    version_text
 }
 
 /// Check if the target file or directory is exist.
@@ -120,25 +120,25 @@ fn is_exist(path: &str) -> bool {
 
 /// Check if the target is file.
 fn is_file(path: &str) -> bool {
-    return metadata(path).unwrap().is_file();
+    metadata(path).unwrap().is_file()
 }
 
 /// Get the type of the target file or directory.
 pub fn get_file_type(path: &str) -> TargetType {
     if is_exist(path) {
         if is_file(path) {
-            return TargetType::File;
+            TargetType::File
         } else {
-            return TargetType::Dir;
+            TargetType::Dir
         }
     } else {
-        return TargetType::None;
+        TargetType::None
     }
 }
 
 /// Check if the path is an absolute path.
 fn is_abs_path(path: &str) -> bool {
-    return path.starts_with("/");
+    path.starts_with('/')
 }
 
 /// Get the absolute path of the target file or directory.
@@ -217,12 +217,10 @@ pub fn copy_items(src: &str, dst: &str) -> Result<(), fs_extra::error::Error> {
                 Err(e) => Err(e),
             }
         }
-        TargetType::None => {
-            return Err(fs_extra::error::Error::new(
-                fs_extra::error::ErrorKind::InvalidPath,
-                "The source path is not exist.",
-            ));
-        }
+        TargetType::None => Err(fs_extra::error::Error::new(
+            fs_extra::error::ErrorKind::InvalidPath,
+            "The source path is not exist.",
+        )),
     }
 }
 
@@ -274,12 +272,10 @@ pub fn move_items(src: &str, dst: &str) -> Result<(), fs_extra::error::Error> {
                 Err(e) => Err(e),
             }
         }
-        TargetType::None => {
-            return Err(fs_extra::error::Error::new(
-                fs_extra::error::ErrorKind::InvalidPath,
-                "The source path is not exist.",
-            ));
-        }
+        TargetType::None => Err(fs_extra::error::Error::new(
+            fs_extra::error::ErrorKind::InvalidPath,
+            "The source path is not exist.",
+        )),
     }
 }
 
@@ -294,12 +290,10 @@ pub fn link_items(src: &str, dst: &str) -> Result<(), std::io::Error> {
         ));
     }
     match get_file_type(&abs_src) {
-        TargetType::None => {
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::InvalidInput,
-                "The source path is not exist.",
-            ));
-        }
+        TargetType::None => Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "The source path is not exist.",
+        )),
         _ => match symlink(&abs_src, &abs_dst) {
             Ok(_) => Ok(()),
             Err(e) => Err(e),
@@ -333,7 +327,7 @@ pub fn reset_mark() -> Result<(), confy::ConfyError> {
 /// Get the marked path.
 pub fn get_marked_path() -> Result<String, confy::ConfyError> {
     match load_config() {
-        Ok(config) => Ok(config.data.target.to_string()),
+        Ok(config) => Ok(config.data.target),
         Err(e) => Err(e),
     }
 }

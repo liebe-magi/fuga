@@ -1,7 +1,6 @@
 mod fugue;
 
 use clap::{ArgGroup, Args, Parser, Subcommand};
-use emojis;
 
 #[derive(Parser)]
 #[clap(
