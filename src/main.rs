@@ -57,10 +57,10 @@ struct Mark {
 }
 
 fn get_icon_information() -> String {
-    return format!(
+    format!(
         "{} ",
         emojis::get_by_shortcode("information_source").unwrap()
-    );
+    )
 }
 
 fn main() {
