@@ -48,7 +48,7 @@ fn get_config_path() -> Option<PathBuf> {
 
 /// Get the bold text.
 fn get_bold_text(text: &str) -> String {
-    return format!("{}{}{}", style::Bold, text, style::Reset);
+    format!("{}{}{}", style::Bold, text, style::Reset)
 }
 
 /// Get the colorized text.
