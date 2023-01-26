@@ -98,32 +98,29 @@ fn main() {
                     Err(e) => println!("❌ : {}", e),
                 }
             };
-            match mark.target {
-                Some(target) => {
-                    // Set the target
-                    match fugue::get_file_type(&target) {
-                        fugue::TargetType::None => {
-                            println!(
-                                "❌ : {} is not found.",
-                                fugue::get_colorized_text(&target, true)
-                            );
-                        }
-                        _ => {
-                            let abs_path = fugue::get_abs_path(&target);
-                            match fugue::store_path(&abs_path) {
-                                Ok(_) => {
-                                    println!(
-                                        "✅ : {} {} has marked.",
-                                        fugue::get_icon(&target),
-                                        fugue::get_colorized_text(&target, true)
-                                    );
-                                }
-                                Err(e) => println!("❌ : {}", e),
+            if let Some(target) = mark.target {
+                // Set the target
+                match fugue::get_file_type(&target) {
+                    fugue::TargetType::None => {
+                        println!(
+                            "❌ : {} is not found.",
+                            fugue::get_colorized_text(&target, true)
+                        );
+                    }
+                    _ => {
+                        let abs_path = fugue::get_abs_path(&target);
+                        match fugue::store_path(&abs_path) {
+                            Ok(_) => {
+                                println!(
+                                    "✅ : {} {} has marked.",
+                                    fugue::get_icon(&target),
+                                    fugue::get_colorized_text(&target, true)
+                                );
                             }
+                            Err(e) => println!("❌ : {}", e),
                         }
                     }
                 }
-                None => (),
             }
         }
         Action::Copy { name } => {

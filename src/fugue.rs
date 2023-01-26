@@ -146,7 +146,7 @@ pub fn get_abs_path(path: &str) -> String {
     match is_abs_path(path) {
         true => path.to_string(),
         false => match env::current_dir() {
-            Ok(current) => return current.join(&path).display().to_string(),
+            Ok(current) => return current.join(path).display().to_string(),
             Err(_) => panic!("Failed to get current directory."),
         },
     }
