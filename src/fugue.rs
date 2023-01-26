@@ -109,7 +109,7 @@ pub fn store_path(target: &str) -> Result<(), confy::ConfyError> {
 /// Get version of this tool.
 pub fn get_version() -> String {
     let version = env!("CARGO_PKG_VERSION");
-    let version_text = format!("v{}", version);
+    let version_text = format!("v{version}");
     version_text
 }
 
@@ -164,7 +164,7 @@ pub fn get_name(path: &str) -> String {
             None => panic!("Failed to get file name."),
         },
         TargetType::None => {
-            panic!("{} is not exist.", path);
+            panic!("{path} is not exist.");
         }
     }
 }

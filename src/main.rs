@@ -95,7 +95,7 @@ fn main() {
                 // Reset the target
                 match fugue::reset_mark() {
                     Ok(()) => println!("✅ : The marked path has reset."),
-                    Err(e) => println!("❌ : {}", e),
+                    Err(e) => println!("❌ : {e}"),
                 }
             };
             if let Some(target) = mark.target {
@@ -117,7 +117,7 @@ fn main() {
                                     fugue::get_colorized_text(&target, true)
                                 );
                             }
-                            Err(e) => println!("❌ : {}", e),
+                            Err(e) => println!("❌ : {e}"),
                         }
                     }
                 }
@@ -128,7 +128,7 @@ fn main() {
             let target = match fugue::get_marked_path() {
                 Ok(target) => target,
                 Err(e) => {
-                    panic!("❌ : {}", e);
+                    panic!("❌ : {e}");
                 }
             };
             match fugue::get_file_type(&target) {
@@ -136,7 +136,7 @@ fn main() {
                     if target.is_empty() {
                         println!("❌ : No path has been marked.");
                     } else {
-                        println!("❌ : {} is not found.", target);
+                        println!("❌ : {target} is not found.");
                     }
                 }
                 _ => {
@@ -166,7 +166,7 @@ fn main() {
                                 fugue::get_colorized_text(&dst_name, true)
                             );
                         }
-                        Err(e) => println!("❌ : {}", e),
+                        Err(e) => println!("❌ : {e}"),
                     }
                 }
             }
@@ -176,7 +176,7 @@ fn main() {
             let target = match fugue::get_marked_path() {
                 Ok(target) => target,
                 Err(e) => {
-                    panic!("❌ : {}", e);
+                    panic!("❌ : {e}");
                 }
             };
             match fugue::get_file_type(&target) {
@@ -184,7 +184,7 @@ fn main() {
                     if target.is_empty() {
                         println!("❌ : No path has been marked.");
                     } else {
-                        println!("❌ : {} is not found.", target);
+                        println!("❌ : {target} is not found.");
                     }
                 }
                 _ => {
@@ -215,10 +215,10 @@ fn main() {
                             );
                             match fugue::reset_mark() {
                                 Ok(_) => (),
-                                Err(e) => println!("❌ : {}", e),
+                                Err(e) => println!("❌ : {e}"),
                             }
                         }
-                        Err(e) => println!("❌ : {}", e),
+                        Err(e) => println!("❌ : {e}"),
                     }
                 }
             }
@@ -228,7 +228,7 @@ fn main() {
             let target = match fugue::get_marked_path() {
                 Ok(target) => target,
                 Err(e) => {
-                    panic!("❌ : {}", e);
+                    panic!("❌ : {e}");
                 }
             };
             match fugue::get_file_type(&target) {
@@ -236,7 +236,7 @@ fn main() {
                     if target.is_empty() {
                         println!("❌ : No path has been marked.");
                     } else {
-                        println!("❌ : {} is not found.", target);
+                        println!("❌ : {target} is not found.");
                     }
                 }
                 _ => {
@@ -266,7 +266,7 @@ fn main() {
                                 fugue::get_colorized_text(&dst_name, true)
                             );
                         }
-                        Err(e) => println!("❌ : {}", e),
+                        Err(e) => println!("❌ : {e}"),
                     }
                 }
             }
