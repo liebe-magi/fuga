@@ -71,7 +71,7 @@ pub fn get_colorized_text(text: &str, is_bold: bool) -> String {
 
 /// load AppConfig.
 pub fn load_config() -> Result<AppConfig, confy::ConfyError> {
-    match confy::load::<AppConfig>(APP_NAME) {
+    match confy::load::<AppConfig>(APP_NAME, APP_NAME) {
         Ok(mut config) => match config.user_config.box_path.is_empty() {
             true => {
                 let config_path = match get_config_path() {
@@ -81,7 +81,7 @@ pub fn load_config() -> Result<AppConfig, confy::ConfyError> {
                     }
                 };
                 config.user_config.box_path = format!("{}", config_path.join("box").display());
-                match confy::store(APP_NAME, &config) {
+                match confy::store(APP_NAME, APP_NAME, &config) {
                     Ok(_) => Ok(config),
                     Err(e) => Err(e),
                 }
@@ -97,7 +97,7 @@ pub fn store_path(target: &str) -> Result<(), confy::ConfyError> {
     match load_config() {
         Ok(mut config) => {
             config.data.target = target.to_string();
-            match confy::store(APP_NAME, &config) {
+            match confy::store(APP_NAME, APP_NAME, &config) {
                 Ok(_) => Ok(()),
                 Err(e) => Err(e),
             }
@@ -315,7 +315,7 @@ pub fn reset_mark() -> Result<(), confy::ConfyError> {
     match load_config() {
         Ok(mut config) => {
             config.data.target = "".to_string();
-            match confy::store(APP_NAME, &config) {
+            match confy::store(APP_NAME, APP_NAME, &config) {
                 Ok(_) => Ok(()),
                 Err(e) => Err(e),
             }
