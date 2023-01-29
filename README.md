@@ -38,7 +38,7 @@ $ cargo install fugue-box
 
 ```
 $ fugue -V
-fugue v0.0.2
+fugue v0.0.3
 ```
 
 ## 📦 USAGE
@@ -65,7 +65,7 @@ SUBCOMMANDS:
 - `fugue mark <TARGET>`で操作対象とするファイルやディレクトリをマーキングします。
 
 ```
-$ fugue mark target_file.txt 
+$ fugue mark target_file.txt
 ✅ : 📄 target_file.txt has marked.
 ```
 
@@ -94,7 +94,7 @@ $ fugue mark --reset
 ```
 $ cd test_dir_copy
 
-$ fugue copy         
+$ fugue copy
 ℹ️ : Start copying 📄 target_file.txt from /home/user/path/to/file/target_file.txt
 ✅ : 📄 target_file.txt has copied.
 ```
@@ -118,7 +118,7 @@ $ fugue copy copy.txt
 ```
 $ cd test_dir_move
 
-$ fugue move                
+$ fugue move
 ℹ️ : Start moving 📄 target_file.txt from /home/user/path/to/file/target_file.txt
 ✅ : 📄 target_file.txt has moved.
 ```
@@ -142,7 +142,7 @@ $ fugue move move.txt
 ```
 $ cd test_dir_link
 
-$ fugue link                
+$ fugue link
 ℹ️ : Start making symbolic link 📄 target_file.txt from /home/user/path/to/file/target_file.txt
 ✅ : 📄 target_file.txt has made.
 ```
