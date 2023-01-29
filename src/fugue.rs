@@ -13,7 +13,7 @@ use termion::{color, style};
 /// The application's name.
 pub const APP_NAME: &str = "fugue";
 /// The application's version.
-pub const VERSION: &str = "v0.0.2";
+pub const VERSION: &str = "v0.0.3";
 
 /// The type of the target file or directory
 pub enum TargetType {
@@ -48,7 +48,7 @@ fn get_config_path() -> Option<PathBuf> {
 
 /// Get the bold text.
 fn get_bold_text(text: &str) -> String {
-    return format!("{}{}{}", style::Bold, text, style::Reset);
+    format!("{}{}{}", style::Bold, text, style::Reset)
 }
 
 /// Get the colorized text.
@@ -71,7 +71,7 @@ pub fn get_colorized_text(text: &str, is_bold: bool) -> String {
 
 /// load AppConfig.
 pub fn load_config() -> Result<AppConfig, confy::ConfyError> {
-    match confy::load::<AppConfig>(APP_NAME) {
+    match confy::load::<AppConfig>(APP_NAME, APP_NAME) {
         Ok(mut config) => match config.user_config.box_path.is_empty() {
             true => {
                 let config_path = match get_config_path() {
@@ -81,7 +81,7 @@ pub fn load_config() -> Result<AppConfig, confy::ConfyError> {
                     }
                 };
                 config.user_config.box_path = format!("{}", config_path.join("box").display());
-                match confy::store(APP_NAME, &config) {
+                match confy::store(APP_NAME, APP_NAME, &config) {
                     Ok(_) => Ok(config),
                     Err(e) => Err(e),
                 }
@@ -97,7 +97,7 @@ pub fn store_path(target: &str) -> Result<(), confy::ConfyError> {
     match load_config() {
         Ok(mut config) => {
             config.data.target = target.to_string();
-            match confy::store(APP_NAME, &config) {
+            match confy::store(APP_NAME, APP_NAME, &config) {
                 Ok(_) => Ok(()),
                 Err(e) => Err(e),
             }
@@ -109,7 +109,7 @@ pub fn store_path(target: &str) -> Result<(), confy::ConfyError> {
 /// Get version of this tool.
 pub fn get_version() -> String {
     let version = env!("CARGO_PKG_VERSION");
-    let version_text = format!("v{}", version);
+    let version_text = format!("v{version}");
     version_text
 }
 
@@ -146,7 +146,7 @@ pub fn get_abs_path(path: &str) -> String {
     match is_abs_path(path) {
         true => path.to_string(),
         false => match env::current_dir() {
-            Ok(current) => return current.join(&path).display().to_string(),
+            Ok(current) => return current.join(path).display().to_string(),
             Err(_) => panic!("Failed to get current directory."),
         },
     }
@@ -164,7 +164,7 @@ pub fn get_name(path: &str) -> String {
             None => panic!("Failed to get file name."),
         },
         TargetType::None => {
-            panic!("{} is not exist.", path);
+            panic!("{path} is not exist.");
         }
     }
 }
@@ -186,6 +186,7 @@ pub fn copy_items(src: &str, dst: &str) -> Result<(), fs_extra::error::Error> {
             let pbr = ProgressBar::new(total);
             pbr.set_style(ProgressStyle::default_bar()
             .template("{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {bytes}/{total_bytes} ({eta})")
+            .unwrap()
             .progress_chars("#>-"));
             pbr
         });
@@ -241,6 +242,7 @@ pub fn move_items(src: &str, dst: &str) -> Result<(), fs_extra::error::Error> {
             let pbr = ProgressBar::new(total);
             pbr.set_style(ProgressStyle::default_bar()
             .template("{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {bytes}/{total_bytes} ({eta})")
+            .unwrap()
             .progress_chars("#>-"));
             pbr
         });
@@ -315,7 +317,7 @@ pub fn reset_mark() -> Result<(), confy::ConfyError> {
     match load_config() {
         Ok(mut config) => {
             config.data.target = "".to_string();
-            match confy::store(APP_NAME, &config) {
+            match confy::store(APP_NAME, APP_NAME, &config) {
                 Ok(_) => Ok(()),
                 Err(e) => Err(e),
             }
