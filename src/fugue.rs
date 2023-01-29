@@ -13,7 +13,7 @@ use termion::{color, style};
 /// The application's name.
 pub const APP_NAME: &str = "fugue";
 /// The application's version.
-pub const VERSION: &str = "v0.0.2";
+pub const VERSION: &str = "v0.0.3";
 
 /// The type of the target file or directory
 pub enum TargetType {
