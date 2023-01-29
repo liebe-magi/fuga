@@ -186,6 +186,7 @@ pub fn copy_items(src: &str, dst: &str) -> Result<(), fs_extra::error::Error> {
             let pbr = ProgressBar::new(total);
             pbr.set_style(ProgressStyle::default_bar()
             .template("{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {bytes}/{total_bytes} ({eta})")
+            .unwrap()
             .progress_chars("#>-"));
             pbr
         });
@@ -241,6 +242,7 @@ pub fn move_items(src: &str, dst: &str) -> Result<(), fs_extra::error::Error> {
             let pbr = ProgressBar::new(total);
             pbr.set_style(ProgressStyle::default_bar()
             .template("{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {bytes}/{total_bytes} ({eta})")
+            .unwrap()
             .progress_chars("#>-"));
             pbr
         });
