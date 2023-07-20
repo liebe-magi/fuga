@@ -15,7 +15,7 @@ keywords = ["cli", "file", "filesystem"]
 [dependencies]
 clap = { version = "4.3.17", features = ["derive"] }
 serde = "^1.0.173"
-serde_derive = "^1.0.171"
+serde_derive = "^1.0.173"
 confy = "^0.5.1"
 dirs = "5.0.1"
 termion = "2.0.1"
