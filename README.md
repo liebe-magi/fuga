@@ -1,6 +1,6 @@
 [![Crates.io](https://img.shields.io/crates/v/fugue-box)](https://crates.io/crates/fugue-box)
-[![Crates.io](https://img.shields.io/crates/l/fugue-box)](https://github.com/MagicalLiebe/fugue/blob/main/LICENSE)
-[![CI](https://github.com/MagicalLiebe/fugue/actions/workflows/rust_ci.yml/badge.svg?branch=develop)](https://github.com/MagicalLiebe/fugue/actions/workflows/rust_ci.yml)
+[![Crates.io](https://img.shields.io/crates/l/fugue-box)](https://github.com/liebe-magi/fugue/blob/main/LICENSE)
+[![CI](https://github.com/liebe-magi/fugue/actions/workflows/rust_ci.yml/badge.svg?branch=develop)](https://github.com/liebe-magi/fugue/actions/workflows/rust_ci.yml)
 
 # 📦 FUGUE 📦
 
@@ -16,7 +16,7 @@ A CLI tool to operate files or directories in 2 steps.
 
 ### ビルド済みバイナリ
 
-- 以下のアーキテクチャ用のバイナリを[releases](https://github.com/MagicalLiebe/fugue/releases)に準備しています。
+- 以下のアーキテクチャ用のバイナリを[releases](https://github.com/liebe-magi/fugue/releases)に準備しています。
 
   - aarch64-apple-darwin (Mac - Apple Chip)
   - x86_64-apple-darwin (Mac - Intel Chip)
