@@ -16,7 +16,7 @@ A CLI tool to operate files or directories in 2 steps.
 
 ### ビルド済みバイナリ
 
-- 以下のアーキテクチャ用のバイナリを[releases](https://github.com/MagicalLiebe/fugue/releases)に準備しています。
+- 以下のアーキテクチャ用のバイナリを[releases](https://github.com/liebe-magi/fugue/releases)に準備しています。
 
   - aarch64-apple-darwin (Mac - Apple Chip)
   - x86_64-apple-darwin (Mac - Intel Chip)
