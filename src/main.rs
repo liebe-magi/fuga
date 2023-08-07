@@ -5,7 +5,7 @@ use clap::{ArgGroup, Args, Parser, Subcommand};
 #[derive(Parser)]
 #[clap(
     name = fugue::APP_NAME,
-    author = "MagicalLiebe <magical.liebe@gmail.com>",
+    author = "liebe-magi <magical.liebe@gmail.com>",
     version = fugue::VERSION,
     about = "A CLI tool to operate files or directories in 2 steps."
 )]
