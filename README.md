@@ -38,7 +38,7 @@ $ cargo install fugue-box
 
 ```
 $ fugue -V
-fugue v0.0.3
+fugue v0.0.4
 ```
 
 ## 📦 USAGE
