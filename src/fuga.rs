@@ -11,9 +11,9 @@ use std::rc::Rc;
 use termion::{color, style};
 
 /// The application's name.
-pub const APP_NAME: &str = "fugue";
+pub const APP_NAME: &str = "fuga";
 /// The application's version.
-pub const VERSION: &str = "v0.0.4";
+pub const VERSION: &str = "v0.0.1";
 
 /// The type of the target file or directory
 pub enum TargetType {

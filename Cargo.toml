@@ -1,11 +1,11 @@
 [package]
-name = "fugue-box"
-version = "0.0.4"
+name = "fuga"
+version = "0.0.1"
 edition = "2021"
-authors = ["liebe-magi <magical.liebe@gmail.com>"]
+authors = ["liebe-magi <liebe.magi@gmail.com>"]
 description = "A CLI tool to operate files or directories in 2 steps."
 readme = "README.md"
-repository = "https://github.com/liebe-magi/fugue"
+repository = "https://github.com/liebe-magi/fuga"
 license = "MIT"
 categories = ["filesystem"]
 keywords = ["cli", "file", "filesystem"]
@@ -24,5 +24,5 @@ indicatif = "0.17.7"
 emojis = "0.6.1"
 
 [[bin]]
-name = "fugue"
+name = "fuga"
 path = "src/main.rs"
