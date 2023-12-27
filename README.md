@@ -1,6 +1,6 @@
 [![Crates.io](https://img.shields.io/crates/v/fuga)](https://crates.io/crates/fuga)
 [![Crates.io](https://img.shields.io/crates/l/fuga)](https://github.com/liebe-magi/fuga/blob/main/LICENSE)
-[![CI](https://github.com/liebe-magi/fuga/actions/workflows/rust_ci.yml/badge.svg?branch=develop)](https://github.com/liebe-magi/fuga/actions/workflows/rust_ci.yml)
+[![build](https://github.com/liebe-magi/fuga/actions/workflows/build.yml/badge.svg?branch=main&event=push)](https://github.com/liebe-magi/fuga/actions/workflows/build.yml)
 
 # 📦 FUGA 📦
 
