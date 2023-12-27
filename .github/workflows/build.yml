@@ -104,7 +104,7 @@ jobs:
         shell: bash
         run: |
           VERSION="$(cargo run --bin version)"
-          echo "::set-output name=version::$VERSION"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
@@ -178,7 +178,7 @@ jobs:
           name: draft-release
       - id: upload-url
         run: |
-          echo "::set-output name=url::$(cat draft-release/release_upload_url.txt)"
+          echo "url=$(cat release_upload_url.txt)" >> $GITHUB_OUTPUT
       - uses: actions/download-artifact@v4
         with:
           name: build-${{ matrix.target }}-${{ needs.build.outputs.version }}
