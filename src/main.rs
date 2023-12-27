@@ -275,7 +275,7 @@ fn main() {
             }
         }
         Action::Version => {
-            println!("{} {}", fuga::APP_NAME, fuga::get_version());
+            println!("{}", fuga::get_version());
         }
     }
 }
