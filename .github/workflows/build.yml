@@ -103,7 +103,7 @@ jobs:
         id: properties
         shell: bash
         run: |
-          VERSION="$(cargo run --bin version)"
+          VERSION="$(cargo run -- version)"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
       - name: Upload artifact
         uses: actions/upload-artifact@v4
