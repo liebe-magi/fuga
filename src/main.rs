@@ -3,7 +3,7 @@ mod fuga;
 use clap::{ArgGroup, Args, Parser, Subcommand};
 use once_cell::sync::Lazy;
 
-static VERSION: Lazy<String> = Lazy::new(|| fuga::get_version());
+static VERSION: Lazy<String> = Lazy::new(fuga::get_version);
 
 #[derive(Parser)]
 #[clap(
