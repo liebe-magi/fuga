@@ -6,37 +6,35 @@
 
 A CLI tool to operate files or directories in 2 steps.
 
-[日本語のREADMEはこちら](README_jp.md)
-
 ## 📦 DESCRIPTION
 
-- `fuga` is a CLI tool that performs file operations in two steps.
-- Developed as an alternative to commands like `mv`, `cp`, and `ln`.
-- Mark files or directories to operate on using `fuga mark`, and then perform copy or move operations after navigating to another directory.
+- `fuga`はファイル操作を2ステップで行うCLIツールです。
+- `mv`,`cp`,`ln`コマンドなどの代替コマンドとして開発しました。
+- 操作対象のファイルやディレクトリを`fuga mark`によりマーキングし、別のディレクトリに移動した後にコピーや移動を実行できます。
 
 ## 📦 INSTALLATION
 
-### Pre-built Binaries
+### ビルド済みバイナリ
 
-- Pre-built binaries for the following architectures are available on [releases](https://github.com/liebe-magi/fuga/releases).
+- 以下のアーキテクチャ用のバイナリを[releases](https://github.com/liebe-magi/fuga/releases)に準備しています。
 
   - aarch64-apple-darwin (Mac - Apple Chip)
   - x86_64-apple-darwin (Mac - Intel Chip)
   - x86_64-unknown-linux-gnu (Linux - Intel Chip)
 
-- Place the binary for your architecture in a directory included in your system's PATH.
+- お使いのPCにあったバイナリをパスの通ったディレクトリに配置してください。
 
-### Build with Cargo
+### Cargoによるビルド
 
-- You can install `fuga` by building it using the `cargo` command.
+- `cargo`コマンドによりビルドすることでインストールできます。
 
 ```
 cargo install fuga
 ```
 
-### Verify Installation
+### コマンドの確認
 
-- If the installation is successful, the version information can be displayed using the following command:
+- 以下のコマンドでバージョン情報が表示されればインストール完了です。
 
 ```
 $ fuga -V
@@ -62,36 +60,36 @@ SUBCOMMANDS:
     version    Show the version of the tool
 ```
 
-### Setting the Target File
+### 操作対象ファイルの設定
 
-- Mark the file or directory you want to operate on with `fuga mark <TARGET>`.
+- `fuga mark <TARGET>`で操作対象とするファイルやディレクトリをマーキングします。
 
 ```
 $ fuga mark target_file.txt
 ✅ : 📄 target_file.txt has marked.
 ```
 
-- To check the currently marked file or directory, use `fuga mark --show`.
+- 現在マーキング中のファイルやディレクトリを確認したいときは、`fuga mark --show`で確認できます。
 
 ```
 $ fuga mark --show
 ℹ️ : 📄 /home/user/path/to/file/target_file.txt
 ```
 
-- To unmark a file or directory, use `fuga mark --reset`.
+- マーキングを解除したい場合は、`fuga mark --reset`で解除できます。
 
 ```
 $ fuga mark --reset
 ✅ : The marked path has reset.
 ```
 
-### File Operations
+### ファイル操作
 
-Three file operations are possible: `Copy`, `Move`, and `Symbolic Link creation`.
+以下の3つのファイル操作が可能です。
 
-#### Copy
+#### コピー
 
-- Navigate to the destination directory and use `fuga copy` to copy the marked file or directory.
+- コピー先のディレクトリに移動し、`fuga copy`でマーキング中のファイルやディレクトリをコピーできます。
 
 ```
 $ cd test_dir_copy
@@ -101,7 +99,7 @@ $ fuga copy
 ✅ : 📄 target_file.txt has copied.
 ```
 
-- You can also specify the destination directory or file name.
+- コピー先のディレクトリやファイル名を与えることも可能です。
 
 ```
 $ fuga copy test_dir_copy
@@ -113,9 +111,9 @@ $ fuga copy copy.txt
 ✅ : 📄 copy.txt has copied.
 ```
 
-#### Move
+#### 移動
 
-- Navigate to the destination directory and use `fuga move` to move the marked file or directory.
+- 移動先のディレクトリに移動し、`fuga move`でマーキング中のファイルやディレクトリを移動できます。
 
 ```
 $ cd test_dir_move
@@ -125,7 +123,7 @@ $ fuga move
 ✅ : 📄 target_file.txt has moved.
 ```
 
-- Similar to copying, you can specify the destination directory or file name.
+- コピー同様、移動先のディレクトリやファイル名を与えることも可能です。
 
 ```
 $ fuga move test_dir_move
@@ -137,9 +135,9 @@ $ fuga move move.txt
 ✅ : 📄 move.txt has moved.
 ```
 
-#### Symbolic Link
+#### シンボリックリンク
 
-- Navigate to the directory where you want to create a symbolic link and use `fuga link` to create a symbolic link to the marked file or directory.
+- シンボリックリンクを作成したいディレクトリに移動し、`fuga link`でマーキング中のファイルやディレクトリへのシンボリックリンクを作成できます。
 
 ```
 $ cd test_dir_link
@@ -149,7 +147,7 @@ $ fuga link
 ✅ : 📄 target_file.txt has made.
 ```
 
-- You can also specify the destination directory or file name for the symbolic link.
+- シンボリックリンク作成先のディレクトリやファイル名を与えることも可能です。
 
 ```
 $ fuga link test_dir_link
