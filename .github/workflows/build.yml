@@ -96,7 +96,7 @@ jobs:
           profile: minimal
           target: ${{ matrix.target }}
           override: true
-      - uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v2
       - name: Build release version
         run: cargo build --verbose --release --target=${{ matrix.target }}
       - name: Export properties
