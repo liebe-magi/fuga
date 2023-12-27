@@ -1,22 +1,22 @@
-[![Crates.io](https://img.shields.io/crates/v/fugue-box)](https://crates.io/crates/fugue-box)
-[![Crates.io](https://img.shields.io/crates/l/fugue-box)](https://github.com/liebe-magi/fugue/blob/main/LICENSE)
-[![CI](https://github.com/liebe-magi/fugue/actions/workflows/rust_ci.yml/badge.svg?branch=develop)](https://github.com/liebe-magi/fugue/actions/workflows/rust_ci.yml)
+[![Crates.io](https://img.shields.io/crates/v/fuga)](https://crates.io/crates/fuga)
+[![Crates.io](https://img.shields.io/crates/l/fuga)](https://github.com/liebe-magi/fuga/blob/main/LICENSE)
+[![CI](https://github.com/liebe-magi/fuga/actions/workflows/rust_ci.yml/badge.svg?branch=develop)](https://github.com/liebe-magi/fuga/actions/workflows/rust_ci.yml)
 
-# 📦 FUGUE 📦
+# 📦 FUGA 📦
 
 A CLI tool to operate files or directories in 2 steps.
 
 ## 📦 DESCRIPTION
 
-- `fugue`はファイル操作を2ステップで行うCLIツールです。
+- `fuga`はファイル操作を2ステップで行うCLIツールです。
 - `mv`,`cp`,`ln`コマンドなどの代替コマンドとして開発しました。
-- 操作対象のファイルやディレクトリを`fugue mark`によりマーキングし、別のディレクトリに移動した後にコピーや移動を実行できます。
+- 操作対象のファイルやディレクトリを`fuga mark`によりマーキングし、別のディレクトリに移動した後にコピーや移動を実行できます。
 
 ## 📦 INSTALLATION
 
 ### ビルド済みバイナリ
 
-- 以下のアーキテクチャ用のバイナリを[releases](https://github.com/liebe-magi/fugue/releases)に準備しています。
+- 以下のアーキテクチャ用のバイナリを[releases](https://github.com/liebe-magi/fuga/releases)に準備しています。
 
   - aarch64-apple-darwin (Mac - Apple Chip)
   - x86_64-apple-darwin (Mac - Intel Chip)
@@ -29,7 +29,7 @@ A CLI tool to operate files or directories in 2 steps.
 - `cargo`コマンドによりビルドすることでインストールできます。
 
 ```
-$ cargo install fugue-box
+cargo install fuga
 ```
 
 ### コマンドの確認
@@ -37,15 +37,15 @@ $ cargo install fugue-box
 - 以下のコマンドでバージョン情報が表示されればインストール完了です。
 
 ```
-$ fugue -V
-fugue v0.0.4
+$ fuga -V
+fuga v0.0.1
 ```
 
 ## 📦 USAGE
 
 ```
 USAGE:
-    fugue <SUBCOMMAND>
+    fuga <SUBCOMMAND>
 
 OPTIONS:
     -h, --help       Print help information
@@ -62,24 +62,24 @@ SUBCOMMANDS:
 
 ### 操作対象ファイルの設定
 
-- `fugue mark <TARGET>`で操作対象とするファイルやディレクトリをマーキングします。
+- `fuga mark <TARGET>`で操作対象とするファイルやディレクトリをマーキングします。
 
 ```
-$ fugue mark target_file.txt
+$ fuga mark target_file.txt
 ✅ : 📄 target_file.txt has marked.
 ```
 
-- 現在マーキング中のファイルやディレクトリを確認したいときは、`fugue mark --show`で確認できます。
+- 現在マーキング中のファイルやディレクトリを確認したいときは、`fuga mark --show`で確認できます。
 
 ```
-$ fugue mark --show
+$ fuga mark --show
 ℹ️ : 📄 /home/user/path/to/file/target_file.txt
 ```
 
-- マーキングを解除したい場合は、`fugue mark --reset`で解除できます。
+- マーキングを解除したい場合は、`fuga mark --reset`で解除できます。
 
 ```
-$ fugue mark --reset
+$ fuga mark --reset
 ✅ : The marked path has reset.
 ```
 
@@ -89,12 +89,12 @@ $ fugue mark --reset
 
 #### コピー
 
-- コピー先のディレクトリに移動し、`fugue copy`でマーキング中のファイルやディレクトリをコピーできます。
+- コピー先のディレクトリに移動し、`fuga copy`でマーキング中のファイルやディレクトリをコピーできます。
 
 ```
 $ cd test_dir_copy
 
-$ fugue copy
+$ fuga copy
 ℹ️ : Start copying 📄 target_file.txt from /home/user/path/to/file/target_file.txt
 ✅ : 📄 target_file.txt has copied.
 ```
@@ -102,23 +102,23 @@ $ fugue copy
 - コピー先のディレクトリやファイル名を与えることも可能です。
 
 ```
-$ fugue copy test_dir_copy
+$ fuga copy test_dir_copy
 ℹ️ : Start copying 📄 test_dir_copy/target_file.txt from /home/user/path/to/file/target_file.txt
 ✅ : 📄 test_dir_copy/target_file.txt has copied.
 
-$ fugue copy copy.txt
+$ fuga copy copy.txt
 ℹ️ : Start copying 📄 copy.txt from /home/user/path/to/file/target_file.txt
 ✅ : 📄 copy.txt has copied.
 ```
 
 #### 移動
 
-- 移動先のディレクトリに移動し、`fugue move`でマーキング中のファイルやディレクトリを移動できます。
+- 移動先のディレクトリに移動し、`fuga move`でマーキング中のファイルやディレクトリを移動できます。
 
 ```
 $ cd test_dir_move
 
-$ fugue move
+$ fuga move
 ℹ️ : Start moving 📄 target_file.txt from /home/user/path/to/file/target_file.txt
 ✅ : 📄 target_file.txt has moved.
 ```
@@ -126,23 +126,23 @@ $ fugue move
 - コピー同様、移動先のディレクトリやファイル名を与えることも可能です。
 
 ```
-$ fugue move test_dir_move
+$ fuga move test_dir_move
 ℹ️ : Start copying 📄 test_dir_move/target_file.txt from /home/user/path/to/file/target_file.txt
 ✅ : 📄 test_dir_move/target_file.txt has moved.
 
-$ fugue move move.txt
+$ fuga move move.txt
 ℹ️ : Start moving 📄 move.txt from /home/user/path/to/file/target_file.txt
 ✅ : 📄 move.txt has moved.
 ```
 
 #### シンボリックリンク
 
-- シンボリックリンクを作成したいディレクトリに移動し、`fugue link`でマーキング中のファイルやディレクトリへのシンボリックリンクを作成できます。
+- シンボリックリンクを作成したいディレクトリに移動し、`fuga link`でマーキング中のファイルやディレクトリへのシンボリックリンクを作成できます。
 
 ```
 $ cd test_dir_link
 
-$ fugue link
+$ fuga link
 ℹ️ : Start making symbolic link 📄 target_file.txt from /home/user/path/to/file/target_file.txt
 ✅ : 📄 target_file.txt has made.
 ```
@@ -150,11 +150,11 @@ $ fugue link
 - シンボリックリンク作成先のディレクトリやファイル名を与えることも可能です。
 
 ```
-$ fugue link test_dir_link
+$ fuga link test_dir_link
 ℹ️ : Start making symbolic link 📄 test_dir_link/target_file.txt from /home/user/path/to/file/target_file.txt
 ✅ : 📄 test_dir_link/target_file.txt has made.
 
-$ fugue link link.txt
+$ fuga link link.txt
 ℹ️ : Start making symbolic link 📄 link.txt from /home/user/path/to/file/target_file.txt
 ✅ : 📄 link.txt has made.
 ```

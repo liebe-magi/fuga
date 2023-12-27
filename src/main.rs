@@ -1,12 +1,15 @@
-mod fugue;
+mod fuga;
 
 use clap::{ArgGroup, Args, Parser, Subcommand};
+use once_cell::sync::Lazy;
+
+static VERSION: Lazy<String> = Lazy::new(|| fuga::get_version());
 
 #[derive(Parser)]
 #[clap(
-    name = fugue::APP_NAME,
-    author = "liebe-magi <magical.liebe@gmail.com>",
-    version = fugue::VERSION,
+    name = fuga::APP_NAME,
+    author = "liebe-magi <liebe.magi@gmail.com>",
+    version = &**VERSION,
     about = "A CLI tool to operate files or directories in 2 steps."
 )]
 struct AppArg {
@@ -69,7 +72,7 @@ fn main() {
         Action::Mark(mark) => {
             if mark.show {
                 // show the marked path
-                let target = match fugue::get_marked_path() {
+                let target = match fuga::get_marked_path() {
                     Ok(target) => target,
                     Err(e) => {
                         panic!("{} : {}", get_icon_information(), e);
@@ -78,14 +81,14 @@ fn main() {
                 if target.is_empty() {
                     println!("{} : No path has been marked.", get_icon_information());
                 } else {
-                    match fugue::get_file_type(&target) {
-                        fugue::TargetType::None => {
+                    match fuga::get_file_type(&target) {
+                        fuga::TargetType::None => {
                             println!("{} : ❓ {}", get_icon_information(), target)
                         }
                         _ => println!(
                             "{} : {} {}",
                             get_icon_information(),
-                            fugue::get_icon(&target),
+                            fuga::get_icon(&target),
                             target
                         ),
                     }
@@ -93,28 +96,28 @@ fn main() {
             };
             if mark.reset {
                 // Reset the target
-                match fugue::reset_mark() {
+                match fuga::reset_mark() {
                     Ok(()) => println!("✅ : The marked path has reset."),
                     Err(e) => println!("❌ : {e}"),
                 }
             };
             if let Some(target) = mark.target {
                 // Set the target
-                match fugue::get_file_type(&target) {
-                    fugue::TargetType::None => {
+                match fuga::get_file_type(&target) {
+                    fuga::TargetType::None => {
                         println!(
                             "❌ : {} is not found.",
-                            fugue::get_colorized_text(&target, true)
+                            fuga::get_colorized_text(&target, true)
                         );
                     }
                     _ => {
-                        let abs_path = fugue::get_abs_path(&target);
-                        match fugue::store_path(&abs_path) {
+                        let abs_path = fuga::get_abs_path(&target);
+                        match fuga::store_path(&abs_path) {
                             Ok(_) => {
                                 println!(
                                     "✅ : {} {} has marked.",
-                                    fugue::get_icon(&target),
-                                    fugue::get_colorized_text(&target, true)
+                                    fuga::get_icon(&target),
+                                    fuga::get_colorized_text(&target, true)
                                 );
                             }
                             Err(e) => println!("❌ : {e}"),
@@ -125,14 +128,14 @@ fn main() {
         }
         Action::Copy { name } => {
             // show the marked path
-            let target = match fugue::get_marked_path() {
+            let target = match fuga::get_marked_path() {
                 Ok(target) => target,
                 Err(e) => {
                     panic!("❌ : {e}");
                 }
             };
-            match fugue::get_file_type(&target) {
-                fugue::TargetType::None => {
+            match fuga::get_file_type(&target) {
+                fuga::TargetType::None => {
                     if target.is_empty() {
                         println!("❌ : No path has been marked.");
                     } else {
@@ -143,27 +146,27 @@ fn main() {
                     // Copy the files or directories
                     let dst_name = match name {
                         Some(name) => name,
-                        None => fugue::get_name(&target),
+                        None => fuga::get_name(&target),
                     };
-                    let dst_name = match fugue::get_file_type(&dst_name) {
-                        fugue::TargetType::Dir => {
-                            format!("{}/{}", dst_name, fugue::get_name(&target))
+                    let dst_name = match fuga::get_file_type(&dst_name) {
+                        fuga::TargetType::Dir => {
+                            format!("{}/{}", dst_name, fuga::get_name(&target))
                         }
                         _ => dst_name,
                     };
                     println!(
                         "{} : Start copying {} {} from {}",
                         get_icon_information(),
-                        fugue::get_icon(&target),
-                        fugue::get_colorized_text(&dst_name, true),
+                        fuga::get_icon(&target),
+                        fuga::get_colorized_text(&dst_name, true),
                         target
                     );
-                    match fugue::copy_items(&target, &dst_name) {
+                    match fuga::copy_items(&target, &dst_name) {
                         Ok(_) => {
                             println!(
                                 "✅ : {} {} has copied.",
-                                fugue::get_icon(&dst_name),
-                                fugue::get_colorized_text(&dst_name, true)
+                                fuga::get_icon(&dst_name),
+                                fuga::get_colorized_text(&dst_name, true)
                             );
                         }
                         Err(e) => println!("❌ : {e}"),
@@ -173,14 +176,14 @@ fn main() {
         }
         Action::Move { name } => {
             // show the marked path
-            let target = match fugue::get_marked_path() {
+            let target = match fuga::get_marked_path() {
                 Ok(target) => target,
                 Err(e) => {
                     panic!("❌ : {e}");
                 }
             };
-            match fugue::get_file_type(&target) {
-                fugue::TargetType::None => {
+            match fuga::get_file_type(&target) {
+                fuga::TargetType::None => {
                     if target.is_empty() {
                         println!("❌ : No path has been marked.");
                     } else {
@@ -191,29 +194,29 @@ fn main() {
                     // Move the files or directories
                     let dst_name = match name {
                         Some(name) => name,
-                        None => fugue::get_name(&target),
+                        None => fuga::get_name(&target),
                     };
-                    let dst_name = match fugue::get_file_type(&dst_name) {
-                        fugue::TargetType::Dir => {
-                            format!("{}/{}", dst_name, fugue::get_name(&target))
+                    let dst_name = match fuga::get_file_type(&dst_name) {
+                        fuga::TargetType::Dir => {
+                            format!("{}/{}", dst_name, fuga::get_name(&target))
                         }
                         _ => dst_name,
                     };
                     println!(
                         "{} : Start moving {} {} from {}",
                         get_icon_information(),
-                        fugue::get_icon(&target),
-                        fugue::get_colorized_text(&dst_name, true),
+                        fuga::get_icon(&target),
+                        fuga::get_colorized_text(&dst_name, true),
                         target
                     );
-                    match fugue::move_items(&target, &dst_name) {
+                    match fuga::move_items(&target, &dst_name) {
                         Ok(_) => {
                             println!(
                                 "✅ : {} {} has moved.",
-                                fugue::get_icon(&dst_name),
-                                fugue::get_colorized_text(&dst_name, true)
+                                fuga::get_icon(&dst_name),
+                                fuga::get_colorized_text(&dst_name, true)
                             );
-                            match fugue::reset_mark() {
+                            match fuga::reset_mark() {
                                 Ok(_) => (),
                                 Err(e) => println!("❌ : {e}"),
                             }
@@ -225,14 +228,14 @@ fn main() {
         }
         Action::Link { name } => {
             // show the marked path
-            let target = match fugue::get_marked_path() {
+            let target = match fuga::get_marked_path() {
                 Ok(target) => target,
                 Err(e) => {
                     panic!("❌ : {e}");
                 }
             };
-            match fugue::get_file_type(&target) {
-                fugue::TargetType::None => {
+            match fuga::get_file_type(&target) {
+                fuga::TargetType::None => {
                     if target.is_empty() {
                         println!("❌ : No path has been marked.");
                     } else {
@@ -243,27 +246,27 @@ fn main() {
                     // Move the files or directories
                     let dst_name = match name {
                         Some(name) => name,
-                        None => fugue::get_name(&target),
+                        None => fuga::get_name(&target),
                     };
-                    let dst_name = match fugue::get_file_type(&dst_name) {
-                        fugue::TargetType::Dir => {
-                            format!("{}/{}", dst_name, fugue::get_name(&target))
+                    let dst_name = match fuga::get_file_type(&dst_name) {
+                        fuga::TargetType::Dir => {
+                            format!("{}/{}", dst_name, fuga::get_name(&target))
                         }
                         _ => dst_name,
                     };
                     println!(
                         "{} : Start making symbolic link {} {} from {}",
                         get_icon_information(),
-                        fugue::get_icon(&target),
-                        fugue::get_colorized_text(&dst_name, true),
+                        fuga::get_icon(&target),
+                        fuga::get_colorized_text(&dst_name, true),
                         target
                     );
-                    match fugue::link_items(&target, &dst_name) {
+                    match fuga::link_items(&target, &dst_name) {
                         Ok(_) => {
                             println!(
                                 "✅ : {} {} has made.",
-                                fugue::get_icon(&dst_name),
-                                fugue::get_colorized_text(&dst_name, true)
+                                fuga::get_icon(&dst_name),
+                                fuga::get_colorized_text(&dst_name, true)
                             );
                         }
                         Err(e) => println!("❌ : {e}"),
@@ -272,7 +275,7 @@ fn main() {
             }
         }
         Action::Version => {
-            println!("{} {}", fugue::APP_NAME, fugue::get_version());
+            println!("{} {}", fuga::APP_NAME, fuga::get_version());
         }
     }
 }
