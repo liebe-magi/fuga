@@ -106,7 +106,7 @@ jobs:
           VERSION="$(cargo run --bin version)"
           echo "::set-output name=version::$VERSION"
       - name: Upload artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: build-${{ matrix.target }}-${{steps.properties.outputs.version}}
           path: target/${{ matrix.target }}/release/fuga
@@ -148,7 +148,7 @@ jobs:
         run: |
           echo '${{ steps.createDraftRelease.outputs.upload_url }}' > release_upload_url.txt
       - name: Upload `release_upload_url.txt`
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v4
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
