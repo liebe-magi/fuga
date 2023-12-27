@@ -12,8 +12,6 @@ use termion::{color, style};
 
 /// The application's name.
 pub const APP_NAME: &str = "fuga";
-/// The application's version.
-pub const VERSION: &str = "v0.0.1";
 
 /// The type of the target file or directory
 pub enum TargetType {
@@ -331,14 +329,5 @@ pub fn get_marked_path() -> Result<String, confy::ConfyError> {
     match load_config() {
         Ok(config) => Ok(config.data.target),
         Err(e) => Err(e),
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn test_get_version() {
-        let version = super::get_version();
-        assert_eq!(version, super::VERSION);
     }
 }
