@@ -1,12 +1,15 @@
 mod fuga;
 
 use clap::{ArgGroup, Args, Parser, Subcommand};
+use once_cell::sync::Lazy;
+
+static VERSION: Lazy<String> = Lazy::new(|| fuga::get_version());
 
 #[derive(Parser)]
 #[clap(
     name = fuga::APP_NAME,
     author = "liebe-magi <liebe.magi@gmail.com>",
-    version = fuga::VERSION,
+    version = &**VERSION,
     about = "A CLI tool to operate files or directories in 2 steps."
 )]
 struct AppArg {
