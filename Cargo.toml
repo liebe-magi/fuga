@@ -9,6 +9,7 @@ repository = "https://github.com/liebe-magi/fuga"
 license = "MIT"
 categories = ["filesystem"]
 keywords = ["cli", "file", "filesystem"]
+default-run = "fuga"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
