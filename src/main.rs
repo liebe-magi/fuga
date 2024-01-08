@@ -1,61 +1,72 @@
 mod fuga;
 
-use clap::{ArgGroup, Args, Parser, Subcommand};
+use clap::{ArgGroup, Args, Command, CommandFactory, Parser, Subcommand, ValueHint};
+use clap_complete::{generate, Generator, Shell};
 use once_cell::sync::Lazy;
 
 static VERSION: Lazy<String> = Lazy::new(fuga::get_version);
 
-#[derive(Parser)]
-#[clap(
+#[derive(Parser, Debug, PartialEq)]
+#[command(
     name = fuga::APP_NAME,
     author = "liebe-magi <liebe.magi@gmail.com>",
     version = &**VERSION,
     about = "A CLI tool to operate files or directories in 2 steps."
 )]
-struct AppArg {
-    #[clap(subcommand)]
-    action: Action,
+struct Opt {
+    #[command(subcommand)]
+    command: Commands,
 }
 
-#[derive(Subcommand)]
-enum Action {
+#[derive(Subcommand, Debug, PartialEq)]
+enum Commands {
     /// Set the path of the target file or directory
     Mark(Mark),
     /// Copy the marked file or directory
     Copy {
         /// The name for the copied file or directory
+        #[arg(value_hint = ValueHint::AnyPath)]
         name: Option<String>,
     },
     /// Move the marked file or directory
     Move {
         /// The name for the moved file or directory
+        #[arg(value_hint = ValueHint::AnyPath)]
         name: Option<String>,
     },
     /// Make a symbolic link to the marked file or directory
     Link {
         /// The name for the symbolic link
+        #[arg(value_hint = ValueHint::AnyPath)]
         name: Option<String>,
+    },
+    /// Generate the completion script
+    Completion {
+        /// The shell to generate the script for
+        #[arg(value_enum)]
+        shell: Shell,
     },
     /// Show the version of the tool
     Version,
 }
 
-#[derive(Args)]
-#[clap(group(
+#[derive(Args, Debug, PartialEq)]
+#[command(group(
             ArgGroup::new("mark")
                 .required(true)
                 .args(&["target", "show", "reset"]),
         ))]
 struct Mark {
     /// The path you want to mark
+    #[arg(value_hint = ValueHint::AnyPath)]
     target: Option<String>,
 
     /// Show the marked path
-    #[clap(short = 's', long = "show")]
+    #[arg(short = 's', long = "show")]
     show: bool,
 
     /// Reset the marked path
-    #[clap(short = 'r', long = "reset")]
+    #[arg(short = 'r', long = "reset")]
     reset: bool,
 }
 
@@ -66,10 +77,15 @@ fn get_icon_information() -> String {
     )
 }
 
+fn print_completions<G: Generator>(gen: G, cmd: &mut Command) {
+    generate(gen, cmd, cmd.get_name().to_string(), &mut std::io::stdout());
+}
+
 fn main() {
-    let cli = AppArg::parse();
-    match cli.action {
-        Action::Mark(mark) => {
+    let opt = Opt::parse();
+
+    match opt.command {
+        Commands::Mark(mark) => {
             if mark.show {
                 // show the marked path
                 let target = match fuga::get_marked_path() {
@@ -126,7 +142,7 @@ fn main() {
                 }
             }
         }
-        Action::Copy { name } => {
+        Commands::Copy { name } => {
             // show the marked path
             let target = match fuga::get_marked_path() {
                 Ok(target) => target,
@@ -174,7 +190,7 @@ fn main() {
                 }
             }
         }
-        Action::Move { name } => {
+        Commands::Move { name } => {
             // show the marked path
             let target = match fuga::get_marked_path() {
                 Ok(target) => target,
@@ -226,7 +242,7 @@ fn main() {
                 }
             }
         }
-        Action::Link { name } => {
+        Commands::Link { name } => {
             // show the marked path
             let target = match fuga::get_marked_path() {
                 Ok(target) => target,
@@ -274,7 +290,11 @@ fn main() {
                 }
             }
         }
-        Action::Version => {
+        Commands::Completion { shell } => {
+            let mut cmd = Opt::command();
+            print_completions(shell, &mut cmd);
+        }
+        Commands::Version => {
             println!("{}", fuga::get_version());
         }
     }
