@@ -212,7 +212,7 @@ checksum = "42703706b716c37f96a77aea830392ad231f44c9e9a67872fa5548707e11b11c"
 
 [[package]]
 name = "fuga"
-version = "0.0.4"
+version = "0.1.0"
 dependencies = [
  "clap",
  "clap_complete",
