@@ -14,7 +14,7 @@ default-run = "fuga"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-clap = { version = "4.4.15", features = ["derive"] }
+clap = { version = "4.4.16", features = ["derive"] }
 clap_complete = "4.4.6"
 serde = "^1.0.195"
 serde_derive = "^1.0.195"
