@@ -40,26 +40,28 @@ cargo install fuga
 
 ```
 $ fuga -V
-fuga v0.0.1
+fuga v0.1.1
 ```
 
 ## 📦 USAGE
 
 ```
-USAGE:
-    fuga <SUBCOMMAND>
+A CLI tool to operate files or directories in 2 steps.
 
-OPTIONS:
-    -h, --help       Print help information
-    -V, --version    Print version information
+Usage: fuga <COMMAND>
 
-SUBCOMMANDS:
-    copy       Copy the marked file or directory
-    help       Print this message or the help of the given subcommand(s)
-    link       Make a symbolic link to the marked file or directory
-    mark       Set the path of the target file or directory
-    move       Move the marked file or directory
-    version    Show the version of the tool
+Commands:
+  mark        Set the path of the target file or directory
+  copy        Copy the marked file or directory
+  move        Move the marked file or directory
+  link        Make a symbolic link to the marked file or directory
+  completion  Generate the completion script
+  version     Show the version of the tool
+  help        Print this message or the help of the given subcommand(s)
+
+Options:
+  -h, --help     Print help
+  -V, --version  Print version
 ```
 
 ### 操作対象ファイルの設定
@@ -159,4 +161,18 @@ $ fuga link test_dir_link
 $ fuga link link.txt
 ℹ️ : Start making symbolic link 📄 link.txt from /home/user/path/to/file/target_file.txt
 ✅ : 📄 link.txt has made.
+```
+
+### 補完スクリプトの生成
+
+- `fuga completion <shell>`でコマンドの補完用スクリプトを標準出力します。シェルは以下の5つに対応しています。
+  - bash
+  - elvish
+  - fish
+  - powershell
+  - zsh
+
+```
+# fishの場合
+$ fuga completion fish > ~/.config/fish/completions/fuga.fish
 ```
