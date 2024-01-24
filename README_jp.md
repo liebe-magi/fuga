@@ -4,6 +4,8 @@
 
 # 📦 FUGA 📦
 
+![logo](/res/logo_256.jpg)
+
 A CLI tool to operate files or directories in 2 steps.
 
 ## 📦 DESCRIPTION
