@@ -23,7 +23,7 @@ dirs = "5.0.1"
 termion = "3.0.0"
 fs_extra = "1.3.0"
 indicatif = "0.17.8"
-emojis = "0.6.1"
+emojis = "0.6.2"
 once_cell = "1.19.0"
 
 [[bin]]
