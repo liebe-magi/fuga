@@ -16,8 +16,8 @@ default-run = "fuga"
 [dependencies]
 clap = { version = "4.5.4", features = ["derive"] }
 clap_complete = "4.5.2"
-serde = "^1.0.199"
-serde_derive = "^1.0.199"
+serde = "^1.0.200"
+serde_derive = "^1.0.200"
 confy = "^0.6.1"
 dirs = "5.0.1"
 termion = "3.0.0"
