@@ -190,7 +190,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
 <table>
   <tbody>
     <tr>
-      <td align="center" valign="top" width="14.28%"><a href="https://hackfront.dev"><img src="https://avatars.githubusercontent.com/u/38152917?v=4?s=100" width="100px;" alt="りーべ"/><br /><sub><b>りーべ</b></sub></a><br /><a href="#projectManagement-liebe-magi" title="Project Management">📆</a> <a href="https://github.com/liebe-magi/fuga/pulls?q=is%3Apr+reviewed-by%3Aliebe-magi" title="Reviewed Pull Requests">👀</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://hackfront.dev"><img src="https://avatars.githubusercontent.com/u/38152917?v=4?s=100" width="100px;" alt="りーべ"/><br /><sub><b>りーべ</b></sub></a><br /><a href="#projectManagement-liebe-magi" title="Project Management">📆</a> <a href="https://github.com/liebe-magi/fuga/pulls?q=is%3Apr+reviewed-by%3Aliebe-magi" title="Reviewed Pull Requests">👀</a> <a href="https://github.com/liebe-magi/fuga/commits?author=liebe-magi" title="Code">💻</a></td>
     </tr>
   </tbody>
 </table>
