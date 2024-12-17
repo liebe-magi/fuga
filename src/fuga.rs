@@ -113,7 +113,7 @@ pub fn get_version() -> String {
 
 /// Check if the target file or directory is exist.
 fn is_exist(path: &str) -> bool {
-    return Path::new(path).exists();
+    Path::new(path).exists()
 }
 
 /// Check if the target is file.
@@ -144,7 +144,7 @@ pub fn get_abs_path(path: &str) -> String {
     match is_abs_path(path) {
         true => path.to_string(),
         false => match env::current_dir() {
-            Ok(current) => return current.join(path).display().to_string(),
+            Ok(current) => current.join(path).display().to_string(),
             Err(_) => panic!("Failed to get current directory."),
         },
     }
@@ -154,11 +154,11 @@ pub fn get_abs_path(path: &str) -> String {
 pub fn get_name(path: &str) -> String {
     match get_file_type(path) {
         TargetType::File => match Path::new(path).file_name() {
-            Some(file_name) => return file_name.to_string_lossy().to_string(),
+            Some(file_name) => file_name.to_string_lossy().to_string(),
             None => panic!("Failed to get file name."),
         },
         TargetType::Dir => match Path::new(path).file_name() {
-            Some(file_name) => return file_name.to_string_lossy().to_string(),
+            Some(file_name) => file_name.to_string_lossy().to_string(),
             None => panic!("Failed to get file name."),
         },
         TargetType::None => {
