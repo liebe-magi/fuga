@@ -94,6 +94,7 @@ fn execute_file_operation<F>(
     };
 
     // Use optimized file info retrieval to reduce system calls
+    // Note: FUGA supports operations on both files and directories
     match fuga::get_file_info(&target) {
         Ok(file_info) if file_info.exists => {
             let dst_name = fuga::get_destination_name(&target, name);

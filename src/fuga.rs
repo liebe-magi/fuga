@@ -144,18 +144,28 @@ pub fn get_file_info(path: &str) -> Result<FileInfo, std::io::Error> {
     }
 }
 
-/// Get the type of the target file or directory.
-pub fn get_file_type(path: &str) -> TargetType {
+/// Get the type of the target file or directory with proper error handling.
+pub fn get_file_type_result(path: &str) -> Result<TargetType, std::io::Error> {
     match get_file_info(path) {
         Ok(info) => {
             if !info.exists {
-                TargetType::None
+                Ok(TargetType::None)
             } else if info.is_file {
-                TargetType::File
+                Ok(TargetType::File)
             } else {
-                TargetType::Dir
+                Ok(TargetType::Dir)
             }
         }
+        Err(e) => Err(e),
+    }
+}
+
+/// Get the type of the target file or directory.
+/// Note: This function treats I/O errors as TargetType::None for backward compatibility.
+/// For proper error handling, use get_file_type_result() instead.
+pub fn get_file_type(path: &str) -> TargetType {
+    match get_file_type_result(path) {
+        Ok(target_type) => target_type,
         Err(_) => TargetType::None,
     }
 }
