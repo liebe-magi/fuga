@@ -132,12 +132,15 @@ pub fn get_file_info(path: &str) -> Result<FileInfo, std::io::Error> {
                 .file_name()
                 .map(|n| n.to_string_lossy().to_string()),
         }),
-        Err(_) => Ok(FileInfo {
-            exists: false,
-            is_file: false,
-            is_dir: false,
-            name: None,
-        }),
+        Err(e) => match e.kind() {
+            std::io::ErrorKind::NotFound => Ok(FileInfo {
+                exists: false,
+                is_file: false,
+                is_dir: false,
+                name: None,
+            }),
+            _ => Err(e),
+        },
     }
 }
 
@@ -174,18 +177,24 @@ pub fn get_abs_path(path: &str) -> String {
 }
 
 /// Get the name of file or directory from the path with optimized file info retrieval.
-pub fn get_name(path: &str) -> String {
+pub fn get_name(path: &str) -> Result<String, std::io::Error> {
     match get_file_info(path) {
         Ok(info) => {
             if !info.exists {
-                panic!("{path} does not exist.");
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::NotFound,
+                    format!("{path} does not exist."),
+                ));
             }
             match info.name {
-                Some(name) => name,
-                None => panic!("Failed to get file name for {path}."),
+                Some(name) => Ok(name),
+                None => Err(std::io::Error::new(
+                    std::io::ErrorKind::InvalidInput,
+                    format!("Failed to get file name for {path}."),
+                )),
             }
         }
-        Err(_) => panic!("Failed to access file metadata for {path}."),
+        Err(e) => Err(e),
     }
 }
 
@@ -363,7 +372,10 @@ pub fn get_destination_name(target: &str, name: Option<String>) -> String {
                 _ => name, // Not a directory or doesn't exist, use as-is
             }
         }
-        None => get_name(target),
+        None => match get_name(target) {
+            Ok(name) => name,
+            Err(_) => target.to_string(), // Fallback to full path if name extraction fails
+        },
     }
 }
 

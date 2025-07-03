@@ -123,13 +123,17 @@ fn execute_file_operation<F>(
                 Err(e) => println!("❌ : {e}"),
             }
         }
-        Ok(_) | Err(_) => {
-            // File doesn't exist or error accessing it
+        Ok(_) => {
+            // File doesn't exist
             if target.is_empty() {
                 println!("❌ : No path has been marked.");
             } else {
                 println!("❌ : {target} is not found.");
             }
+        }
+        Err(e) => {
+            // I/O error accessing file
+            println!("❌ : Failed to access {target}: {e}");
         }
     }
 }
