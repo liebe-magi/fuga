@@ -14,10 +14,20 @@ use termion::{color, style};
 pub const APP_NAME: &str = "fuga";
 
 /// The type of the target file or directory
+#[derive(Debug, Clone, PartialEq)]
 pub enum TargetType {
     File,
     Dir,
     None,
+}
+
+/// Consolidated file information to reduce system calls
+#[derive(Debug, Clone)]
+pub struct FileInfo {
+    pub exists: bool,
+    pub is_file: bool,
+    pub is_dir: bool,
+    pub name: Option<String>,
 }
 
 /// The struct of the config file
@@ -111,26 +121,52 @@ pub fn get_version() -> String {
     version_text
 }
 
-/// Check if the target file or directory is exist.
-fn is_exist(path: &str) -> bool {
-    Path::new(path).exists()
+/// Get comprehensive file information with a single system call.
+pub fn get_file_info(path: &str) -> Result<FileInfo, std::io::Error> {
+    match metadata(path) {
+        Ok(metadata) => Ok(FileInfo {
+            exists: true,
+            is_file: metadata.is_file(),
+            is_dir: metadata.is_dir(),
+            name: Path::new(path)
+                .file_name()
+                .map(|n| n.to_string_lossy().to_string()),
+        }),
+        Err(e) => match e.kind() {
+            std::io::ErrorKind::NotFound => Ok(FileInfo {
+                exists: false,
+                is_file: false,
+                is_dir: false,
+                name: None,
+            }),
+            _ => Err(e),
+        },
+    }
 }
 
-/// Check if the target is file.
-fn is_file(path: &str) -> bool {
-    metadata(path).unwrap().is_file()
+/// Get the type of the target file or directory with proper error handling.
+pub fn get_file_type_result(path: &str) -> Result<TargetType, std::io::Error> {
+    match get_file_info(path) {
+        Ok(info) => {
+            if !info.exists {
+                Ok(TargetType::None)
+            } else if info.is_file {
+                Ok(TargetType::File)
+            } else {
+                Ok(TargetType::Dir)
+            }
+        }
+        Err(e) => Err(e),
+    }
 }
 
 /// Get the type of the target file or directory.
+/// Note: This function treats I/O errors as TargetType::None for backward compatibility.
+/// For proper error handling, use get_file_type_result() instead.
 pub fn get_file_type(path: &str) -> TargetType {
-    if is_exist(path) {
-        if is_file(path) {
-            TargetType::File
-        } else {
-            TargetType::Dir
-        }
-    } else {
-        TargetType::None
+    match get_file_type_result(path) {
+        Ok(target_type) => target_type,
+        Err(_) => TargetType::None,
     }
 }
 
@@ -150,20 +186,25 @@ pub fn get_abs_path(path: &str) -> String {
     }
 }
 
-/// Get the name of file or directory from the path.
-pub fn get_name(path: &str) -> String {
-    match get_file_type(path) {
-        TargetType::File => match Path::new(path).file_name() {
-            Some(file_name) => file_name.to_string_lossy().to_string(),
-            None => panic!("Failed to get file name."),
-        },
-        TargetType::Dir => match Path::new(path).file_name() {
-            Some(file_name) => file_name.to_string_lossy().to_string(),
-            None => panic!("Failed to get file name."),
-        },
-        TargetType::None => {
-            panic!("{path} is not exist.");
+/// Get the name of file or directory from the path with optimized file info retrieval.
+pub fn get_name(path: &str) -> Result<String, std::io::Error> {
+    match get_file_info(path) {
+        Ok(info) => {
+            if !info.exists {
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::NotFound,
+                    format!("{path} does not exist."),
+                ));
+            }
+            match info.name {
+                Some(name) => Ok(name),
+                None => Err(std::io::Error::new(
+                    std::io::ErrorKind::InvalidInput,
+                    format!("Failed to get file name for {path}."),
+                )),
+            }
         }
+        Err(e) => Err(e),
     }
 }
 
@@ -320,14 +361,31 @@ pub fn reset_mark() -> Result<(), confy::ConfyError> {
     }
 }
 
-/// Check if the target is file or directory and return the destination name.
+/// Check if the target is file or directory and return the destination name with optimized file operations.
 pub fn get_destination_name(target: &str, name: Option<String>) -> String {
     match name {
-        Some(name) => match get_file_type(&name) {
-            TargetType::Dir => format!("{}/{}", name, get_name(target)),
-            _ => name,
+        Some(name) => {
+            // Get file info for destination to check if it's a directory
+            match get_file_info(&name) {
+                Ok(dest_info) if dest_info.exists && dest_info.is_dir => {
+                    // Get target name efficiently
+                    match get_file_info(target) {
+                        Ok(target_info) if target_info.exists => {
+                            match target_info.name {
+                                Some(target_name) => format!("{name}/{target_name}"),
+                                None => name, // Fallback if can't get name
+                            }
+                        }
+                        _ => name, // Fallback if target doesn't exist
+                    }
+                }
+                _ => name, // Not a directory or doesn't exist, use as-is
+            }
+        }
+        None => match get_name(target) {
+            Ok(name) => name,
+            Err(_) => target.to_string(), // Fallback to full path if name extraction fails
         },
-        None => get_name(target),
     }
 }
 
