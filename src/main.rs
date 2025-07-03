@@ -93,15 +93,9 @@ fn execute_file_operation<F>(
         }
     };
 
-    match fuga::get_file_type(&target) {
-        fuga::TargetType::None => {
-            if target.is_empty() {
-                println!("❌ : No path has been marked.");
-            } else {
-                println!("❌ : {target} is not found.");
-            }
-        }
-        _ => {
+    // Use optimized file info retrieval to reduce system calls
+    match fuga::get_file_info(&target) {
+        Ok(file_info) if file_info.exists => {
             let dst_name = fuga::get_destination_name(&target, name);
             println!(
                 "{} : Start {} {} {} from {}",
@@ -127,6 +121,14 @@ fn execute_file_operation<F>(
                     }
                 }
                 Err(e) => println!("❌ : {e}"),
+            }
+        }
+        Ok(_) | Err(_) => {
+            // File doesn't exist or error accessing it
+            if target.is_empty() {
+                println!("❌ : No path has been marked.");
+            } else {
+                println!("❌ : {target} is not found.");
             }
         }
     }
