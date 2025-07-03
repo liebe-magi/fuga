@@ -1,7 +1,7 @@
 use dirs::config_dir;
 
 use indicatif::{ProgressBar, ProgressStyle};
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 use std::cell::RefCell;
 use std::env;
 use std::fs::metadata;

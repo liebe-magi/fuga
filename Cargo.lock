@@ -220,7 +220,6 @@ dependencies = [
  "indicatif",
  "once_cell",
  "serde",
- "serde_derive",
  "termion",
 ]
 

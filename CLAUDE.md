@@ -37,9 +37,27 @@ cargo fmt
 # Run clippy lints
 cargo clippy
 
-# Check for unused dependencies
+# Check for unused dependencies (requires installation: cargo install cargo-machete)
 cargo machete
 ```
+
+### Pre-commit Checklist
+Before committing changes, ensure the following checks pass:
+```bash
+# 1. Format code
+cargo fmt
+
+# 2. Run clippy lints and fix warnings
+cargo clippy
+
+# 3. Build the project
+cargo build
+
+# 4. Run tests
+cargo test
+```
+
+These commands should be run in order and all must pass before committing to maintain code quality and consistency.
 
 ## Architecture
 

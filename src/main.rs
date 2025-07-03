@@ -92,7 +92,7 @@ fn execute_file_operation<F>(
             if target.is_empty() {
                 println!("❌ : No path has been marked.");
             } else {
-                println!("❌ : {} is not found.", target);
+                println!("❌ : {target} is not found.");
             }
         }
         _ => {
@@ -198,9 +198,17 @@ fn main() {
                     panic!("❌ : {e}");
                 }
             };
-            execute_file_operation(&target, name, "copying", "copied", |src, dst| {
-                fuga::copy_items(src, dst).map_err(|e| Box::new(e) as Box<dyn std::error::Error>)
-            }, false);
+            execute_file_operation(
+                &target,
+                name,
+                "copying",
+                "copied",
+                |src, dst| {
+                    fuga::copy_items(src, dst)
+                        .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)
+                },
+                false,
+            );
         }
         Commands::Move { name } => {
             let target = match fuga::get_marked_path() {
@@ -209,9 +217,17 @@ fn main() {
                     panic!("❌ : {e}");
                 }
             };
-            execute_file_operation(&target, name, "moving", "moved", |src, dst| {
-                fuga::move_items(src, dst).map_err(|e| Box::new(e) as Box<dyn std::error::Error>)
-            }, true);
+            execute_file_operation(
+                &target,
+                name,
+                "moving",
+                "moved",
+                |src, dst| {
+                    fuga::move_items(src, dst)
+                        .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)
+                },
+                true,
+            );
         }
         Commands::Link { name } => {
             let target = match fuga::get_marked_path() {
@@ -220,9 +236,17 @@ fn main() {
                     panic!("❌ : {e}");
                 }
             };
-            execute_file_operation(&target, name, "making symbolic link", "made", |src, dst| {
-                fuga::link_items(src, dst).map_err(|e| Box::new(e) as Box<dyn std::error::Error>)
-            }, false);
+            execute_file_operation(
+                &target,
+                name,
+                "making symbolic link",
+                "made",
+                |src, dst| {
+                    fuga::link_items(src, dst)
+                        .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)
+                },
+                false,
+            );
         }
         Commands::Completion { shell } => {
             let mut cmd = Opt::command();
