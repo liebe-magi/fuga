@@ -1,7 +1,7 @@
 use dirs::config_dir;
 
 use indicatif::{ProgressBar, ProgressStyle};
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 use std::cell::RefCell;
 use std::env;
 use std::fs::metadata;
@@ -167,6 +167,16 @@ pub fn get_name(path: &str) -> String {
     }
 }
 
+/// Create a progress bar with shared styling.
+fn create_progress_bar(total: u64) -> ProgressBar {
+    let pbr = ProgressBar::new(total);
+    pbr.set_style(ProgressStyle::default_bar()
+        .template("{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {bytes}/{total_bytes} ({eta})")
+        .expect("Invalid progress bar template")
+        .progress_chars("#>-"));
+    pbr
+}
+
 /// Copy the file or directiory.
 pub fn copy_items(src: &str, dst: &str) -> Result<(), fs_extra::error::Error> {
     let abs_src = get_abs_path(src);
@@ -180,14 +190,7 @@ pub fn copy_items(src: &str, dst: &str) -> Result<(), fs_extra::error::Error> {
     let pbr = Rc::new(RefCell::new(None));
     let update_pbr = |copied, total, item_name: &str| {
         let mut pbr = pbr.borrow_mut();
-        let pbr = pbr.get_or_insert_with(|| {
-            let pbr = ProgressBar::new(total);
-            pbr.set_style(ProgressStyle::default_bar()
-            .template("{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {bytes}/{total_bytes} ({eta})")
-            .unwrap()
-            .progress_chars("#>-"));
-            pbr
-        });
+        let pbr = pbr.get_or_insert_with(|| create_progress_bar(total));
         pbr.set_position(copied);
         pbr.set_message(item_name.to_string());
     };
@@ -236,14 +239,7 @@ pub fn move_items(src: &str, dst: &str) -> Result<(), fs_extra::error::Error> {
     let pbr = Rc::new(RefCell::new(None));
     let update_pbr = |copied, total, item_name: &str| {
         let mut pbr = pbr.borrow_mut();
-        let pbr = pbr.get_or_insert_with(|| {
-            let pbr = ProgressBar::new(total);
-            pbr.set_style(ProgressStyle::default_bar()
-            .template("{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {bytes}/{total_bytes} ({eta})")
-            .unwrap()
-            .progress_chars("#>-"));
-            pbr
-        });
+        let pbr = pbr.get_or_insert_with(|| create_progress_bar(total));
         pbr.set_position(copied);
         pbr.set_message(item_name.to_string());
     };
@@ -321,6 +317,17 @@ pub fn reset_mark() -> Result<(), confy::ConfyError> {
             }
         }
         Err(e) => Err(e),
+    }
+}
+
+/// Check if the target is file or directory and return the destination name.
+pub fn get_destination_name(target: &str, name: Option<String>) -> String {
+    match name {
+        Some(name) => match get_file_type(&name) {
+            TargetType::Dir => format!("{}/{}", name, get_name(target)),
+            _ => name,
+        },
+        None => get_name(target),
     }
 }
 

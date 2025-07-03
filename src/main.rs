@@ -77,6 +77,61 @@ fn get_icon_information() -> String {
     )
 }
 
+fn execute_file_operation<F>(
+    name: Option<String>,
+    operation_verb: &str,
+    past_tense: &str,
+    operation_fn: F,
+    reset_mark: bool,
+) where
+    F: Fn(&str, &str) -> Result<(), Box<dyn std::error::Error>>,
+{
+    let target = match fuga::get_marked_path() {
+        Ok(target) => target,
+        Err(e) => {
+            panic!("❌ : {e}");
+        }
+    };
+
+    match fuga::get_file_type(&target) {
+        fuga::TargetType::None => {
+            if target.is_empty() {
+                println!("❌ : No path has been marked.");
+            } else {
+                println!("❌ : {target} is not found.");
+            }
+        }
+        _ => {
+            let dst_name = fuga::get_destination_name(&target, name);
+            println!(
+                "{} : Start {} {} {} from {}",
+                get_icon_information(),
+                operation_verb,
+                fuga::get_icon(&target),
+                fuga::get_colorized_text(&dst_name, true),
+                target
+            );
+            match operation_fn(&target, &dst_name) {
+                Ok(_) => {
+                    println!(
+                        "✅ : {} {} has been {}.",
+                        fuga::get_icon(&dst_name),
+                        fuga::get_colorized_text(&dst_name, true),
+                        past_tense
+                    );
+                    if reset_mark {
+                        match fuga::reset_mark() {
+                            Ok(_) => (),
+                            Err(e) => println!("❌ : {e}"),
+                        }
+                    }
+                }
+                Err(e) => println!("❌ : {e}"),
+            }
+        }
+    }
+}
+
 fn print_completions<G: Generator>(gen: G, cmd: &mut Command) {
     generate(gen, cmd, cmd.get_name().to_string(), &mut std::io::stdout());
 }
@@ -143,152 +198,40 @@ fn main() {
             }
         }
         Commands::Copy { name } => {
-            // show the marked path
-            let target = match fuga::get_marked_path() {
-                Ok(target) => target,
-                Err(e) => {
-                    panic!("❌ : {e}");
-                }
-            };
-            match fuga::get_file_type(&target) {
-                fuga::TargetType::None => {
-                    if target.is_empty() {
-                        println!("❌ : No path has been marked.");
-                    } else {
-                        println!("❌ : {target} is not found.");
-                    }
-                }
-                _ => {
-                    // Copy the files or directories
-                    let dst_name = match name {
-                        Some(name) => name,
-                        None => fuga::get_name(&target),
-                    };
-                    let dst_name = match fuga::get_file_type(&dst_name) {
-                        fuga::TargetType::Dir => {
-                            format!("{}/{}", dst_name, fuga::get_name(&target))
-                        }
-                        _ => dst_name,
-                    };
-                    println!(
-                        "{} : Start copying {} {} from {}",
-                        get_icon_information(),
-                        fuga::get_icon(&target),
-                        fuga::get_colorized_text(&dst_name, true),
-                        target
-                    );
-                    match fuga::copy_items(&target, &dst_name) {
-                        Ok(_) => {
-                            println!(
-                                "✅ : {} {} has copied.",
-                                fuga::get_icon(&dst_name),
-                                fuga::get_colorized_text(&dst_name, true)
-                            );
-                        }
-                        Err(e) => println!("❌ : {e}"),
-                    }
-                }
-            }
+            execute_file_operation(
+                name,
+                "copying",
+                "copied",
+                |src, dst| {
+                    fuga::copy_items(src, dst)
+                        .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)
+                },
+                false,
+            );
         }
         Commands::Move { name } => {
-            // show the marked path
-            let target = match fuga::get_marked_path() {
-                Ok(target) => target,
-                Err(e) => {
-                    panic!("❌ : {e}");
-                }
-            };
-            match fuga::get_file_type(&target) {
-                fuga::TargetType::None => {
-                    if target.is_empty() {
-                        println!("❌ : No path has been marked.");
-                    } else {
-                        println!("❌ : {target} is not found.");
-                    }
-                }
-                _ => {
-                    // Move the files or directories
-                    let dst_name = match name {
-                        Some(name) => name,
-                        None => fuga::get_name(&target),
-                    };
-                    let dst_name = match fuga::get_file_type(&dst_name) {
-                        fuga::TargetType::Dir => {
-                            format!("{}/{}", dst_name, fuga::get_name(&target))
-                        }
-                        _ => dst_name,
-                    };
-                    println!(
-                        "{} : Start moving {} {} from {}",
-                        get_icon_information(),
-                        fuga::get_icon(&target),
-                        fuga::get_colorized_text(&dst_name, true),
-                        target
-                    );
-                    match fuga::move_items(&target, &dst_name) {
-                        Ok(_) => {
-                            println!(
-                                "✅ : {} {} has moved.",
-                                fuga::get_icon(&dst_name),
-                                fuga::get_colorized_text(&dst_name, true)
-                            );
-                            match fuga::reset_mark() {
-                                Ok(_) => (),
-                                Err(e) => println!("❌ : {e}"),
-                            }
-                        }
-                        Err(e) => println!("❌ : {e}"),
-                    }
-                }
-            }
+            execute_file_operation(
+                name,
+                "moving",
+                "moved",
+                |src, dst| {
+                    fuga::move_items(src, dst)
+                        .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)
+                },
+                true,
+            );
         }
         Commands::Link { name } => {
-            // show the marked path
-            let target = match fuga::get_marked_path() {
-                Ok(target) => target,
-                Err(e) => {
-                    panic!("❌ : {e}");
-                }
-            };
-            match fuga::get_file_type(&target) {
-                fuga::TargetType::None => {
-                    if target.is_empty() {
-                        println!("❌ : No path has been marked.");
-                    } else {
-                        println!("❌ : {target} is not found.");
-                    }
-                }
-                _ => {
-                    // Move the files or directories
-                    let dst_name = match name {
-                        Some(name) => name,
-                        None => fuga::get_name(&target),
-                    };
-                    let dst_name = match fuga::get_file_type(&dst_name) {
-                        fuga::TargetType::Dir => {
-                            format!("{}/{}", dst_name, fuga::get_name(&target))
-                        }
-                        _ => dst_name,
-                    };
-                    println!(
-                        "{} : Start making symbolic link {} {} from {}",
-                        get_icon_information(),
-                        fuga::get_icon(&target),
-                        fuga::get_colorized_text(&dst_name, true),
-                        target
-                    );
-                    match fuga::link_items(&target, &dst_name) {
-                        Ok(_) => {
-                            println!(
-                                "✅ : {} {} has made.",
-                                fuga::get_icon(&dst_name),
-                                fuga::get_colorized_text(&dst_name, true)
-                            );
-                        }
-                        Err(e) => println!("❌ : {e}"),
-                    }
-                }
-            }
+            execute_file_operation(
+                name,
+                "making symbolic link",
+                "made",
+                |src, dst| {
+                    fuga::link_items(src, dst)
+                        .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)
+                },
+                false,
+            );
         }
         Commands::Completion { shell } => {
             let mut cmd = Opt::command();
