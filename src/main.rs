@@ -78,7 +78,6 @@ fn get_icon_information() -> String {
 }
 
 fn execute_file_operation<F>(
-    target: &str,
     name: Option<String>,
     operation_verb: &str,
     past_tense: &str,
@@ -87,7 +86,14 @@ fn execute_file_operation<F>(
 ) where
     F: Fn(&str, &str) -> Result<(), Box<dyn std::error::Error>>,
 {
-    match fuga::get_file_type(target) {
+    let target = match fuga::get_marked_path() {
+        Ok(target) => target,
+        Err(e) => {
+            panic!("❌ : {e}");
+        }
+    };
+
+    match fuga::get_file_type(&target) {
         fuga::TargetType::None => {
             if target.is_empty() {
                 println!("❌ : No path has been marked.");
@@ -96,19 +102,19 @@ fn execute_file_operation<F>(
             }
         }
         _ => {
-            let dst_name = fuga::get_destination_name(target, name);
+            let dst_name = fuga::get_destination_name(&target, name);
             println!(
                 "{} : Start {} {} {} from {}",
                 get_icon_information(),
                 operation_verb,
-                fuga::get_icon(target),
+                fuga::get_icon(&target),
                 fuga::get_colorized_text(&dst_name, true),
                 target
             );
-            match operation_fn(target, &dst_name) {
+            match operation_fn(&target, &dst_name) {
                 Ok(_) => {
                     println!(
-                        "✅ : {} {} has {}.",
+                        "✅ : {} {} has been {}.",
                         fuga::get_icon(&dst_name),
                         fuga::get_colorized_text(&dst_name, true),
                         past_tense
@@ -192,14 +198,7 @@ fn main() {
             }
         }
         Commands::Copy { name } => {
-            let target = match fuga::get_marked_path() {
-                Ok(target) => target,
-                Err(e) => {
-                    panic!("❌ : {e}");
-                }
-            };
             execute_file_operation(
-                &target,
                 name,
                 "copying",
                 "copied",
@@ -211,14 +210,7 @@ fn main() {
             );
         }
         Commands::Move { name } => {
-            let target = match fuga::get_marked_path() {
-                Ok(target) => target,
-                Err(e) => {
-                    panic!("❌ : {e}");
-                }
-            };
             execute_file_operation(
-                &target,
                 name,
                 "moving",
                 "moved",
@@ -230,14 +222,7 @@ fn main() {
             );
         }
         Commands::Link { name } => {
-            let target = match fuga::get_marked_path() {
-                Ok(target) => target,
-                Err(e) => {
-                    panic!("❌ : {e}");
-                }
-            };
             execute_file_operation(
-                &target,
                 name,
                 "making symbolic link",
                 "made",
