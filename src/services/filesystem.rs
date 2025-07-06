@@ -10,6 +10,7 @@ use std::path::Path;
 use std::rc::Rc;
 
 /// Standard file system service implementation
+#[derive(Default)]
 pub struct StandardFileSystemService;
 
 impl StandardFileSystemService {
@@ -20,10 +21,20 @@ impl StandardFileSystemService {
     /// Create a progress bar with shared styling.
     fn create_progress_bar(total: u64) -> ProgressBar {
         let pbr = ProgressBar::new(total);
-        pbr.set_style(ProgressStyle::default_bar()
-            .template("{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {bytes}/{total_bytes} ({eta})")
-            .expect("Invalid progress bar template")
-            .progress_chars("#>-"));
+        
+        // Use a fallback template if the primary one fails
+        let template = "{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {bytes}/{total_bytes} ({eta})";
+        let style = ProgressStyle::default_bar()
+            .template(template)
+            .unwrap_or_else(|_| {
+                // Fallback to simple template if primary fails
+                ProgressStyle::default_bar()
+                    .template("{bar:40} {bytes}/{total_bytes}")
+                    .unwrap_or_else(|_| ProgressStyle::default_bar())
+            })
+            .progress_chars("#>-");
+            
+        pbr.set_style(style);
         pbr
     }
 
@@ -45,7 +56,7 @@ impl StandardFileSystemService {
 
     /// Check if the path is an absolute path.
     fn is_abs_path(&self, path: &str) -> bool {
-        path.starts_with('/')
+        Path::new(path).is_absolute()
     }
 }
 
@@ -67,7 +78,7 @@ impl FileSystemService for StandardFileSystemService {
                     is_dir: false,
                     name: None,
                 }),
-                _ => Err(FugaError::from(e)),
+                _ => Err(FugaError::from_io_error(e, path)),
             },
         }
     }

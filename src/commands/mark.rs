@@ -12,9 +12,9 @@ pub struct MarkCommand<'a> {
 
 #[derive(Debug)]
 pub enum MarkAction {
-    SetTarget(String),
-    ShowTarget,
-    ResetTarget,
+    Set(String),
+    Show,
+    Reset,
 }
 
 impl<'a> MarkCommand<'a> {
@@ -32,13 +32,6 @@ impl<'a> MarkCommand<'a> {
         }
     }
 
-    fn get_icon_information(&self) -> String {
-        format!(
-            "{} ",
-            emojis::get_by_shortcode("information_source").unwrap()
-        )
-    }
-
     fn get_file_type(&self, path: &str) -> TargetType {
         match self.fs_service.get_file_info(path) {
             Ok(info) => {
@@ -53,20 +46,12 @@ impl<'a> MarkCommand<'a> {
             Err(_) => TargetType::None,
         }
     }
-
-    fn get_icon(&self, path: &str) -> String {
-        match self.get_file_type(path) {
-            TargetType::File => "📄".to_string(),
-            TargetType::Dir => "📁".to_string(),
-            TargetType::None => "❌".to_string(),
-        }
-    }
 }
 
 impl<'a> Command for MarkCommand<'a> {
     fn execute(&self) -> CommandResult {
         match &self.action {
-            MarkAction::SetTarget(target) => match self.get_file_type(target) {
+            MarkAction::Set(target) => match self.get_file_type(target) {
                 TargetType::None => {
                     println!(
                         "❌ : {} is not found.",
@@ -79,32 +64,33 @@ impl<'a> Command for MarkCommand<'a> {
                     self.config_repo.store_path(&abs_path)?;
                     println!(
                         "✅ : {} {} has marked.",
-                        self.get_icon(target),
+                        self.ui_service.get_icon_for_target_type(self.get_file_type(target)),
                         self.ui_service.get_colorized_text(target, true)
                     );
                     Ok(())
                 }
             },
-            MarkAction::ShowTarget => {
+            MarkAction::Show => {
                 let target = self.config_repo.get_marked_path()?;
                 if target.is_empty() {
-                    println!("{} : No path has been marked.", self.get_icon_information());
+                    println!("{} : No path has been marked.", self.ui_service.get_icon_information());
                 } else {
-                    match self.get_file_type(&target) {
+                    let target_type = self.get_file_type(&target);
+                    match target_type {
                         TargetType::None => {
-                            println!("{} : ❓ {}", self.get_icon_information(), target)
+                            println!("{} : ❓ {}", self.ui_service.get_icon_information(), target)
                         }
                         _ => println!(
                             "{} : {} {}",
-                            self.get_icon_information(),
-                            self.get_icon(&target),
+                            self.ui_service.get_icon_information(),
+                            self.ui_service.get_icon_for_target_type(target_type),
                             target
                         ),
                     }
                 }
                 Ok(())
             }
-            MarkAction::ResetTarget => {
+            MarkAction::Reset => {
                 self.config_repo.reset_mark()?;
                 println!("✅ : The marked path has reset.");
                 Ok(())

@@ -120,11 +120,11 @@ fn main() {
     let result = match opt.command {
         Commands::Mark(mark) => {
             let action = if mark.show {
-                MarkAction::ShowTarget
+                MarkAction::Show
             } else if mark.reset {
-                MarkAction::ResetTarget
+                MarkAction::Reset
             } else if let Some(target) = mark.target {
-                MarkAction::SetTarget(target)
+                MarkAction::Set(target)
             } else {
                 // Should not happen due to clap validation
                 eprintln!("❌ : No mark action specified");

@@ -5,6 +5,7 @@ use crate::traits::ConfigRepository;
 use dirs::config_dir;
 use std::path::PathBuf;
 
+#[derive(Default)]
 pub struct FileConfigRepository;
 
 impl FileConfigRepository {

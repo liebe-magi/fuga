@@ -46,9 +46,33 @@ impl From<std::io::Error> for FugaError {
         match err.kind() {
             std::io::ErrorKind::NotFound => FugaError::FileNotFound(err.to_string()),
             std::io::ErrorKind::PermissionDenied => FugaError::PermissionError {
-                path: "unknown".to_string(),
+                path: "<context missing>".to_string(),
                 message: err.to_string(),
             },
+            _ => FugaError::IoError(err),
+        }
+    }
+}
+
+impl FugaError {
+    /// Create a PermissionError with specific path context
+    pub fn permission_error(path: &str, err: std::io::Error) -> Self {
+        FugaError::PermissionError {
+            path: path.to_string(),
+            message: err.to_string(),
+        }
+    }
+    
+    /// Create a FileNotFound error with specific path context
+    pub fn file_not_found(path: &str) -> Self {
+        FugaError::FileNotFound(path.to_string())
+    }
+    
+    /// Convert an IO error with path context
+    pub fn from_io_error(err: std::io::Error, path: &str) -> Self {
+        match err.kind() {
+            std::io::ErrorKind::NotFound => Self::file_not_found(path),
+            std::io::ErrorKind::PermissionDenied => Self::permission_error(path, err),
             _ => FugaError::IoError(err),
         }
     }

@@ -2,6 +2,7 @@ use crate::fuga::FileInfo;
 use crate::traits::{FileSystemService, PathService};
 
 /// Standard path service implementation
+#[derive(Default)]
 pub struct StandardPathService;
 
 impl StandardPathService {
