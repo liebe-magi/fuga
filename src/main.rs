@@ -83,15 +83,11 @@ fn execute_file_operation<F>(
     past_tense: &str,
     operation_fn: F,
     reset_mark: bool,
-) where
+) -> Result<(), fuga::FugaError>
+where
     F: Fn(&str, &str) -> Result<(), Box<dyn std::error::Error>>,
 {
-    let target = match fuga::get_marked_path() {
-        Ok(target) => target,
-        Err(e) => {
-            panic!("❌ : {e}");
-        }
-    };
+    let target = fuga::get_marked_path()?;
 
     // Use optimized file info retrieval to reduce system calls
     // Note: FUGA supports operations on both files and directories
@@ -115,28 +111,28 @@ fn execute_file_operation<F>(
                         past_tense
                     );
                     if reset_mark {
-                        match fuga::reset_mark() {
-                            Ok(_) => (),
-                            Err(e) => println!("❌ : {e}"),
-                        }
+                        fuga::reset_mark()?;
                     }
                 }
-                Err(e) => println!("❌ : {e}"),
+                Err(e) => return Err(fuga::FugaError::OperationFailed(e.to_string())),
             }
         }
         Ok(_) => {
             // File doesn't exist
             if target.is_empty() {
-                println!("❌ : No path has been marked.");
+                return Err(fuga::FugaError::OperationFailed(
+                    "No path has been marked".to_string(),
+                ));
             } else {
-                println!("❌ : {target} is not found.");
+                return Err(fuga::FugaError::FileNotFound(target));
             }
         }
         Err(e) => {
             // I/O error accessing file
-            println!("❌ : Failed to access {target}: {e}");
+            return Err(e);
         }
     }
+    Ok(())
 }
 
 fn print_completions<G: Generator>(gen: G, cmd: &mut Command) {
@@ -153,7 +149,8 @@ fn main() {
                 let target = match fuga::get_marked_path() {
                     Ok(target) => target,
                     Err(e) => {
-                        panic!("{} : {}", get_icon_information(), e);
+                        eprintln!("❌ : {e}");
+                        std::process::exit(1);
                     }
                 };
                 if target.is_empty() {
@@ -176,7 +173,10 @@ fn main() {
                 // Reset the target
                 match fuga::reset_mark() {
                     Ok(()) => println!("✅ : The marked path has reset."),
-                    Err(e) => println!("❌ : {e}"),
+                    Err(e) => {
+                        eprintln!("❌ : {e}");
+                        std::process::exit(1);
+                    }
                 }
             };
             if let Some(target) = mark.target {
@@ -189,7 +189,13 @@ fn main() {
                         );
                     }
                     _ => {
-                        let abs_path = fuga::get_abs_path(&target);
+                        let abs_path = match fuga::get_abs_path(&target) {
+                            Ok(path) => path,
+                            Err(e) => {
+                                eprintln!("❌ : {e}");
+                                std::process::exit(1);
+                            }
+                        };
                         match fuga::store_path(&abs_path) {
                             Ok(_) => {
                                 println!(
@@ -198,14 +204,17 @@ fn main() {
                                     fuga::get_colorized_text(&target, true)
                                 );
                             }
-                            Err(e) => println!("❌ : {e}"),
+                            Err(e) => {
+                                eprintln!("❌ : {e}");
+                                std::process::exit(1);
+                            }
                         }
                     }
                 }
             }
         }
         Commands::Copy { name } => {
-            execute_file_operation(
+            if let Err(e) = execute_file_operation(
                 name,
                 "copying",
                 "copied",
@@ -214,10 +223,13 @@ fn main() {
                         .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)
                 },
                 false,
-            );
+            ) {
+                eprintln!("❌ : {e}");
+                std::process::exit(1);
+            }
         }
         Commands::Move { name } => {
-            execute_file_operation(
+            if let Err(e) = execute_file_operation(
                 name,
                 "moving",
                 "moved",
@@ -226,10 +238,13 @@ fn main() {
                         .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)
                 },
                 true,
-            );
+            ) {
+                eprintln!("❌ : {e}");
+                std::process::exit(1);
+            }
         }
         Commands::Link { name } => {
-            execute_file_operation(
+            if let Err(e) = execute_file_operation(
                 name,
                 "making symbolic link",
                 "made",
@@ -238,7 +253,10 @@ fn main() {
                         .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)
                 },
                 false,
-            );
+            ) {
+                eprintln!("❌ : {e}");
+                std::process::exit(1);
+            }
         }
         Commands::Completion { shell } => {
             let mut cmd = Opt::command();

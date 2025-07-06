@@ -10,6 +10,50 @@ use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use termion::{color, style};
 
+/// Custom error type for FUGA operations
+#[derive(Debug)]
+pub enum FugaError {
+    ConfigError(confy::ConfyError),
+    IoError(std::io::Error),
+    FileNotFound(String),
+    InvalidPath(String),
+    PermissionDenied(String),
+    OperationFailed(String),
+}
+
+impl std::fmt::Display for FugaError {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            FugaError::ConfigError(e) => write!(f, "Configuration error: {e}"),
+            FugaError::IoError(e) => write!(f, "IO error: {e}"),
+            FugaError::FileNotFound(path) => write!(f, "File not found: {path}"),
+            FugaError::InvalidPath(path) => write!(f, "Invalid path: {path}"),
+            FugaError::PermissionDenied(path) => write!(f, "Permission denied: {path}"),
+            FugaError::OperationFailed(msg) => write!(f, "Operation failed: {msg}"),
+        }
+    }
+}
+
+impl std::error::Error for FugaError {}
+
+impl From<confy::ConfyError> for FugaError {
+    fn from(err: confy::ConfyError) -> Self {
+        FugaError::ConfigError(err)
+    }
+}
+
+impl From<std::io::Error> for FugaError {
+    fn from(err: std::io::Error) -> Self {
+        match err.kind() {
+            std::io::ErrorKind::NotFound => FugaError::FileNotFound(err.to_string()),
+            std::io::ErrorKind::PermissionDenied => FugaError::PermissionDenied(err.to_string()),
+            _ => FugaError::IoError(err),
+        }
+    }
+}
+
+pub type FugaResult<T> = Result<T, FugaError>;
+
 /// The application's name.
 pub const APP_NAME: &str = "fuga";
 
@@ -78,40 +122,26 @@ pub fn get_colorized_text(text: &str, is_bold: bool) -> String {
 }
 
 /// load AppConfig.
-pub fn load_config() -> Result<AppConfig, confy::ConfyError> {
-    match confy::load::<AppConfig>(APP_NAME, APP_NAME) {
-        Ok(mut config) => match config.user_config.box_path.is_empty() {
-            true => {
-                let config_path = match get_config_path() {
-                    Some(path) => path,
-                    None => {
-                        panic!("Failed to get config path.");
-                    }
-                };
-                config.user_config.box_path = format!("{}", config_path.join("box").display());
-                match confy::store(APP_NAME, APP_NAME, &config) {
-                    Ok(_) => Ok(config),
-                    Err(e) => Err(e),
-                }
-            }
-            false => Ok(config),
-        },
-        Err(err) => Err(err),
+pub fn load_config() -> FugaResult<AppConfig> {
+    let mut config = confy::load::<AppConfig>(APP_NAME, APP_NAME)?;
+
+    if config.user_config.box_path.is_empty() {
+        let config_path = get_config_path()
+            .ok_or_else(|| FugaError::OperationFailed("Failed to get config path".to_string()))?;
+
+        config.user_config.box_path = format!("{}", config_path.join("box").display());
+        confy::store(APP_NAME, APP_NAME, &config)?;
     }
+
+    Ok(config)
 }
 
 /// Store the target path into the config file.
-pub fn store_path(target: &str) -> Result<(), confy::ConfyError> {
-    match load_config() {
-        Ok(mut config) => {
-            config.data.target = target.to_string();
-            match confy::store(APP_NAME, APP_NAME, &config) {
-                Ok(_) => Ok(()),
-                Err(e) => Err(e),
-            }
-        }
-        Err(err) => Err(err),
-    }
+pub fn store_path(target: &str) -> FugaResult<()> {
+    let mut config = load_config()?;
+    config.data.target = target.to_string();
+    confy::store(APP_NAME, APP_NAME, &config)?;
+    Ok(())
 }
 
 /// Get version of this tool.
@@ -122,7 +152,7 @@ pub fn get_version() -> String {
 }
 
 /// Get comprehensive file information with a single system call.
-pub fn get_file_info(path: &str) -> Result<FileInfo, std::io::Error> {
+pub fn get_file_info(path: &str) -> FugaResult<FileInfo> {
     match metadata(path) {
         Ok(metadata) => Ok(FileInfo {
             exists: true,
@@ -139,24 +169,20 @@ pub fn get_file_info(path: &str) -> Result<FileInfo, std::io::Error> {
                 is_dir: false,
                 name: None,
             }),
-            _ => Err(e),
+            _ => Err(FugaError::from(e)),
         },
     }
 }
 
 /// Get the type of the target file or directory with proper error handling.
-pub fn get_file_type_result(path: &str) -> Result<TargetType, std::io::Error> {
-    match get_file_info(path) {
-        Ok(info) => {
-            if !info.exists {
-                Ok(TargetType::None)
-            } else if info.is_file {
-                Ok(TargetType::File)
-            } else {
-                Ok(TargetType::Dir)
-            }
-        }
-        Err(e) => Err(e),
+pub fn get_file_type_result(path: &str) -> FugaResult<TargetType> {
+    let info = get_file_info(path)?;
+    if !info.exists {
+        Ok(TargetType::None)
+    } else if info.is_file {
+        Ok(TargetType::File)
+    } else {
+        Ok(TargetType::Dir)
     }
 }
 
@@ -176,36 +202,27 @@ fn is_abs_path(path: &str) -> bool {
 }
 
 /// Get the absolute path of the target file or directory.
-pub fn get_abs_path(path: &str) -> String {
-    match is_abs_path(path) {
-        true => path.to_string(),
-        false => match env::current_dir() {
-            Ok(current) => current.join(path).display().to_string(),
-            Err(_) => panic!("Failed to get current directory."),
-        },
+pub fn get_abs_path(path: &str) -> FugaResult<String> {
+    if is_abs_path(path) {
+        Ok(path.to_string())
+    } else {
+        let current = env::current_dir().map_err(|e| {
+            FugaError::OperationFailed(format!("Failed to get current directory: {e}"))
+        })?;
+        Ok(current.join(path).display().to_string())
     }
 }
 
 /// Get the name of file or directory from the path with optimized file info retrieval.
-pub fn get_name(path: &str) -> Result<String, std::io::Error> {
-    match get_file_info(path) {
-        Ok(info) => {
-            if !info.exists {
-                return Err(std::io::Error::new(
-                    std::io::ErrorKind::NotFound,
-                    format!("{path} does not exist."),
-                ));
-            }
-            match info.name {
-                Some(name) => Ok(name),
-                None => Err(std::io::Error::new(
-                    std::io::ErrorKind::InvalidInput,
-                    format!("Failed to get file name for {path}."),
-                )),
-            }
-        }
-        Err(e) => Err(e),
+pub fn get_name(path: &str) -> FugaResult<String> {
+    let info = get_file_info(path)?;
+
+    if !info.exists {
+        return Err(FugaError::FileNotFound(path.to_string()));
     }
+
+    info.name
+        .ok_or_else(|| FugaError::InvalidPath(format!("Failed to get file name for {path}")))
 }
 
 /// Create a progress bar with shared styling.
@@ -220,8 +237,18 @@ fn create_progress_bar(total: u64) -> ProgressBar {
 
 /// Copy the file or directiory.
 pub fn copy_items(src: &str, dst: &str) -> Result<(), fs_extra::error::Error> {
-    let abs_src = get_abs_path(src);
-    let abs_dst = get_abs_path(dst);
+    let abs_src = get_abs_path(src).map_err(|e| {
+        fs_extra::error::Error::new(
+            fs_extra::error::ErrorKind::InvalidPath,
+            &format!("Failed to resolve source path: {e}"),
+        )
+    })?;
+    let abs_dst = get_abs_path(dst).map_err(|e| {
+        fs_extra::error::Error::new(
+            fs_extra::error::ErrorKind::InvalidPath,
+            &format!("Failed to resolve destination path: {e}"),
+        )
+    })?;
     if abs_src == abs_dst {
         return Err(fs_extra::error::Error::new(
             fs_extra::error::ErrorKind::InvalidPath,
@@ -269,8 +296,18 @@ pub fn copy_items(src: &str, dst: &str) -> Result<(), fs_extra::error::Error> {
 
 /// Move the file or directory.
 pub fn move_items(src: &str, dst: &str) -> Result<(), fs_extra::error::Error> {
-    let abs_src = get_abs_path(src);
-    let abs_dst = get_abs_path(dst);
+    let abs_src = get_abs_path(src).map_err(|e| {
+        fs_extra::error::Error::new(
+            fs_extra::error::ErrorKind::InvalidPath,
+            &format!("Failed to resolve source path: {e}"),
+        )
+    })?;
+    let abs_dst = get_abs_path(dst).map_err(|e| {
+        fs_extra::error::Error::new(
+            fs_extra::error::ErrorKind::InvalidPath,
+            &format!("Failed to resolve destination path: {e}"),
+        )
+    })?;
     if abs_src == abs_dst {
         return Err(fs_extra::error::Error::new(
             fs_extra::error::ErrorKind::InvalidPath,
@@ -318,8 +355,18 @@ pub fn move_items(src: &str, dst: &str) -> Result<(), fs_extra::error::Error> {
 
 /// Make the symbolic link.
 pub fn link_items(src: &str, dst: &str) -> Result<(), std::io::Error> {
-    let abs_src = get_abs_path(src);
-    let abs_dst = get_abs_path(dst);
+    let abs_src = get_abs_path(src).map_err(|e| {
+        std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            format!("Failed to resolve source path: {e}"),
+        )
+    })?;
+    let abs_dst = get_abs_path(dst).map_err(|e| {
+        std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            format!("Failed to resolve destination path: {e}"),
+        )
+    })?;
     if abs_src == abs_dst {
         return Err(std::io::Error::new(
             std::io::ErrorKind::InvalidInput,
@@ -348,17 +395,11 @@ pub fn get_icon(path: &str) -> String {
 }
 
 /// Reset the mark.
-pub fn reset_mark() -> Result<(), confy::ConfyError> {
-    match load_config() {
-        Ok(mut config) => {
-            config.data.target = "".to_string();
-            match confy::store(APP_NAME, APP_NAME, &config) {
-                Ok(_) => Ok(()),
-                Err(e) => Err(e),
-            }
-        }
-        Err(e) => Err(e),
-    }
+pub fn reset_mark() -> FugaResult<()> {
+    let mut config = load_config()?;
+    config.data.target = "".to_string();
+    confy::store(APP_NAME, APP_NAME, &config)?;
+    Ok(())
 }
 
 /// Check if the target is file or directory and return the destination name with optimized file operations.
@@ -382,17 +423,12 @@ pub fn get_destination_name(target: &str, name: Option<String>) -> String {
                 _ => name, // Not a directory or doesn't exist, use as-is
             }
         }
-        None => match get_name(target) {
-            Ok(name) => name,
-            Err(_) => target.to_string(), // Fallback to full path if name extraction fails
-        },
+        None => get_name(target).unwrap_or_else(|_| target.to_string()),
     }
 }
 
 /// Get the marked path.
-pub fn get_marked_path() -> Result<String, confy::ConfyError> {
-    match load_config() {
-        Ok(config) => Ok(config.data.target),
-        Err(e) => Err(e),
-    }
+pub fn get_marked_path() -> FugaResult<String> {
+    let config = load_config()?;
+    Ok(config.data.target)
 }
