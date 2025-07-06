@@ -59,6 +59,15 @@ cargo test
 
 These commands should be run in order and all must pass before committing to maintain code quality and consistency.
 
+#### Automated Pre-commit Hooks
+This repository includes a Git pre-commit hook that automatically runs these checks before each commit. The hook will:
+- Check code formatting with `cargo fmt --check`
+- Run clippy lints with `cargo clippy -- -D warnings`
+- Verify the project builds with `cargo check`
+- Run all tests with `cargo test`
+
+If any check fails, the commit will be blocked. To skip hooks (not recommended), use `git commit --no-verify`.
+
 ## Architecture
 
 ### Core Components
