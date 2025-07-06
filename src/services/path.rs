@@ -20,17 +20,17 @@ impl PathService for StandardPathService {
         fs_service: &dyn FileSystemService,
     ) -> String {
         match name {
-            Some(name) => {
+            Some(dest) => {
                 // Check if destination is a directory using file system service
-                match fs_service.get_file_info(&name) {
+                match fs_service.get_file_info(&dest) {
                     Ok(dest_info) if dest_info.exists && dest_info.is_dir => {
                         // Get target name from pre-fetched info
                         match &target_info.name {
-                            Some(target_name) => format!("{name}/{target_name}"),
-                            None => name, // Fallback if can't get name
+                            Some(target_name) => format!("{dest}/{target_name}"),
+                            None => dest, // Fallback if can't get name
                         }
                     }
-                    _ => name, // Not a directory or doesn't exist, use as-is
+                    _ => dest, // Not a directory or doesn't exist, use as-is
                 }
             }
             None => {

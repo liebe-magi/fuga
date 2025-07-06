@@ -38,19 +38,15 @@ impl StandardFileSystemService {
         pbr
     }
 
-    /// Get the type of the target file or directory.
-    fn get_file_type(&self, path: &str) -> TargetType {
-        match self.get_file_info(path) {
-            Ok(info) => {
-                if !info.exists {
-                    TargetType::None
-                } else if info.is_file {
-                    TargetType::File
-                } else {
-                    TargetType::Dir
-                }
-            }
-            Err(_) => TargetType::None,
+    /// Create shared progress bar update closure
+    fn create_progress_update_closure(
+        pbr: Rc<RefCell<Option<ProgressBar>>>,
+    ) -> impl Fn(u64, u64, &str) {
+        move |copied, total, item_name: &str| {
+            let mut pbr = pbr.borrow_mut();
+            let pbr = pbr.get_or_insert_with(|| Self::create_progress_bar(total));
+            pbr.set_position(copied);
+            pbr.set_message(item_name.to_string());
         }
     }
 
@@ -94,6 +90,21 @@ impl FileSystemService for StandardFileSystemService {
         }
     }
 
+    fn get_file_type(&self, path: &str) -> TargetType {
+        match self.get_file_info(path) {
+            Ok(info) => {
+                if !info.exists {
+                    TargetType::None
+                } else if info.is_file {
+                    TargetType::File
+                } else {
+                    TargetType::Dir
+                }
+            }
+            Err(_) => TargetType::None,
+        }
+    }
+
     fn copy_items(&self, src: &str, dst: &str) -> FugaResult<()> {
         let abs_src = self.get_abs_path(src)?;
         let abs_dst = self.get_abs_path(dst)?;
@@ -106,12 +117,7 @@ impl FileSystemService for StandardFileSystemService {
         }
 
         let pbr = Rc::new(RefCell::new(None));
-        let update_pbr = |copied, total, item_name: &str| {
-            let mut pbr = pbr.borrow_mut();
-            let pbr = pbr.get_or_insert_with(|| Self::create_progress_bar(total));
-            pbr.set_position(copied);
-            pbr.set_message(item_name.to_string());
-        };
+        let update_pbr = Self::create_progress_update_closure(pbr);
 
         match self.get_file_type(&abs_src) {
             TargetType::File => {
@@ -154,12 +160,7 @@ impl FileSystemService for StandardFileSystemService {
         }
 
         let pbr = Rc::new(RefCell::new(None));
-        let update_pbr = |copied, total, item_name: &str| {
-            let mut pbr = pbr.borrow_mut();
-            let pbr = pbr.get_or_insert_with(|| Self::create_progress_bar(total));
-            pbr.set_position(copied);
-            pbr.set_message(item_name.to_string());
-        };
+        let update_pbr = Self::create_progress_update_closure(pbr);
 
         match self.get_file_type(&abs_src) {
             TargetType::File => {

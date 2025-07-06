@@ -8,6 +8,7 @@ repos:
         language: system
         files: \.rs$
         args: [--all, --]
+        pass_filenames: false
         
       - id: cargo-clippy
         name: cargo clippy
@@ -16,6 +17,7 @@ repos:
         language: system
         files: \.rs$
         args: [--all-targets, --all-features, --, -D, warnings]
+        pass_filenames: false
         
       - id: cargo-check
         name: cargo check

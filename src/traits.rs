@@ -29,6 +29,9 @@ pub trait FileSystemService {
     /// Get the absolute path of a file or directory
     fn get_abs_path(&self, path: &str) -> FugaResult<String>;
 
+    /// Get the type of the target file or directory
+    fn get_file_type(&self, path: &str) -> TargetType;
+
     /// Copy files or directories
     fn copy_items(&self, src: &str, dst: &str) -> FugaResult<()>;
 

@@ -46,7 +46,9 @@ impl From<std::io::Error> for FugaError {
         match err.kind() {
             std::io::ErrorKind::NotFound => FugaError::FileNotFound(err.to_string()),
             std::io::ErrorKind::PermissionDenied => FugaError::PermissionError {
-                path: "<context missing>".to_string(),
+                path:
+                    "<path context unavailable - use FugaError::from_io_error for better context>"
+                        .to_string(),
                 message: err.to_string(),
             },
             _ => FugaError::IoError(err),

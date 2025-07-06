@@ -1,5 +1,5 @@
 use crate::commands::{Command, CommandResult};
-use crate::fuga::{FugaError, TargetType};
+use crate::fuga::FugaError;
 use crate::traits::{ConfigRepository, FileSystemService, PathService, UIService};
 
 /// Link command for creating symbolic links to marked files/directories
@@ -27,21 +27,6 @@ impl<'a> LinkCommand<'a> {
             name,
         }
     }
-
-    fn get_target_type(&self, path: &str) -> TargetType {
-        match self.fs_service.get_file_info(path) {
-            Ok(info) => {
-                if !info.exists {
-                    TargetType::None
-                } else if info.is_file {
-                    TargetType::File
-                } else {
-                    TargetType::Dir
-                }
-            }
-            Err(_) => TargetType::None,
-        }
-    }
 }
 
 impl<'a> Command for LinkCommand<'a> {
@@ -58,7 +43,7 @@ impl<'a> Command for LinkCommand<'a> {
                     self.fs_service,
                 );
 
-                let target_type = self.get_target_type(&target);
+                let target_type = self.fs_service.get_file_type(&target);
                 println!(
                     "{} : Start making symbolic link {} {} from {}",
                     self.ui_service.get_icon_information(),
@@ -70,7 +55,7 @@ impl<'a> Command for LinkCommand<'a> {
                 // Perform the link operation
                 self.fs_service.link_items(&target, &dst_name)?;
 
-                let dst_type = self.get_target_type(&dst_name);
+                let dst_type = self.fs_service.get_file_type(&dst_name);
                 println!(
                     "✅ : {} {} has been made.",
                     self.ui_service.get_icon_for_target_type(dst_type),

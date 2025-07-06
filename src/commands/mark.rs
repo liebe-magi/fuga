@@ -31,27 +31,12 @@ impl<'a> MarkCommand<'a> {
             action,
         }
     }
-
-    fn get_file_type(&self, path: &str) -> TargetType {
-        match self.fs_service.get_file_info(path) {
-            Ok(info) => {
-                if !info.exists {
-                    TargetType::None
-                } else if info.is_file {
-                    TargetType::File
-                } else {
-                    TargetType::Dir
-                }
-            }
-            Err(_) => TargetType::None,
-        }
-    }
 }
 
 impl<'a> Command for MarkCommand<'a> {
     fn execute(&self) -> CommandResult {
         match &self.action {
-            MarkAction::Set(target) => match self.get_file_type(target) {
+            MarkAction::Set(target) => match self.fs_service.get_file_type(target) {
                 TargetType::None => {
                     println!(
                         "❌ : {} is not found.",
@@ -65,7 +50,7 @@ impl<'a> Command for MarkCommand<'a> {
                     println!(
                         "✅ : {} {} has marked.",
                         self.ui_service
-                            .get_icon_for_target_type(self.get_file_type(target)),
+                            .get_icon_for_target_type(self.fs_service.get_file_type(target)),
                         self.ui_service.get_colorized_text(target, true)
                     );
                     Ok(())
@@ -79,7 +64,7 @@ impl<'a> Command for MarkCommand<'a> {
                         self.ui_service.get_icon_information()
                     );
                 } else {
-                    let target_type = self.get_file_type(&target);
+                    let target_type = self.fs_service.get_file_type(&target);
                     match target_type {
                         TargetType::None => {
                             println!("{} : ❓ {}", self.ui_service.get_icon_information(), target)
