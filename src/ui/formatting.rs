@@ -32,14 +32,14 @@ impl UIService for TerminalUIService {
             ),
         }
     }
-    
+
     fn get_icon_information(&self) -> String {
         match emojis::get_by_shortcode("information_source") {
             Some(emoji) => format!("{emoji} "),
             None => "ℹ️ ".to_string(), // Fallback emoji
         }
     }
-    
+
     fn get_icon_for_target_type(&self, target_type: TargetType) -> String {
         match target_type {
             TargetType::File => "📄".to_string(),

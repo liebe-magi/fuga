@@ -21,7 +21,7 @@ impl StandardFileSystemService {
     /// Create a progress bar with shared styling.
     fn create_progress_bar(total: u64) -> ProgressBar {
         let pbr = ProgressBar::new(total);
-        
+
         // Use a fallback template if the primary one fails
         let template = "{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {bytes}/{total_bytes} ({eta})";
         let style = ProgressStyle::default_bar()
@@ -33,7 +33,7 @@ impl StandardFileSystemService {
                     .unwrap_or_else(|_| ProgressStyle::default_bar())
             })
             .progress_chars("#>-");
-            
+
         pbr.set_style(style);
         pbr
     }

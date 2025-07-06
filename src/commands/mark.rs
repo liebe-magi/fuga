@@ -64,7 +64,8 @@ impl<'a> Command for MarkCommand<'a> {
                     self.config_repo.store_path(&abs_path)?;
                     println!(
                         "✅ : {} {} has marked.",
-                        self.ui_service.get_icon_for_target_type(self.get_file_type(target)),
+                        self.ui_service
+                            .get_icon_for_target_type(self.get_file_type(target)),
                         self.ui_service.get_colorized_text(target, true)
                     );
                     Ok(())
@@ -73,7 +74,10 @@ impl<'a> Command for MarkCommand<'a> {
             MarkAction::Show => {
                 let target = self.config_repo.get_marked_path()?;
                 if target.is_empty() {
-                    println!("{} : No path has been marked.", self.ui_service.get_icon_information());
+                    println!(
+                        "{} : No path has been marked.",
+                        self.ui_service.get_icon_information()
+                    );
                 } else {
                     let target_type = self.get_file_type(&target);
                     match target_type {

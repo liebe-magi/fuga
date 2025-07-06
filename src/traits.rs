@@ -43,10 +43,10 @@ pub trait FileSystemService {
 pub trait UIService {
     /// Get colorized text
     fn get_colorized_text(&self, text: &str, is_bold: bool) -> String;
-    
+
     /// Get information icon
     fn get_icon_information(&self) -> String;
-    
+
     /// Get icon for target type
     fn get_icon_for_target_type(&self, target_type: TargetType) -> String;
 }

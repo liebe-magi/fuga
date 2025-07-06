@@ -62,12 +62,12 @@ impl FugaError {
             message: err.to_string(),
         }
     }
-    
+
     /// Create a FileNotFound error with specific path context
     pub fn file_not_found(path: &str) -> Self {
         FugaError::FileNotFound(path.to_string())
     }
-    
+
     /// Convert an IO error with path context
     pub fn from_io_error(err: std::io::Error, path: &str) -> Self {
         match err.kind() {
