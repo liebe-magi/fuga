@@ -1,8 +1,27 @@
+mod commands;
+mod config;
+mod error;
 mod fuga;
+mod services;
+mod traits;
+mod ui;
 
-use clap::{ArgGroup, Args, Command, CommandFactory, Parser, Subcommand, ValueHint};
-use clap_complete::{generate, Generator, Shell};
+use clap::{ArgGroup, Args, CommandFactory, Parser, Subcommand, ValueHint};
+use clap_complete::Shell;
 use once_cell::sync::Lazy;
+
+// Import new architecture components
+use commands::{
+    completion::CompletionCommand,
+    copy::CopyCommand,
+    link::LinkCommand,
+    mark::{MarkAction, MarkCommand},
+    r#move::MoveCommand,
+    Command as FugaCommand,
+};
+use config::FileConfigRepository;
+use services::{StandardFileSystemService, StandardPathService};
+use ui::TerminalUIService;
 
 static VERSION: Lazy<String> = Lazy::new(fuga::get_version);
 
@@ -70,200 +89,104 @@ struct Mark {
     reset: bool,
 }
 
-fn get_icon_information() -> String {
-    format!(
-        "{} ",
-        emojis::get_by_shortcode("information_source").unwrap()
-    )
+/// Initialize all services for dependency injection
+struct ServiceContainer {
+    config_repo: FileConfigRepository,
+    fs_service: StandardFileSystemService,
+    ui_service: TerminalUIService,
+    path_service: StandardPathService,
 }
 
-fn execute_file_operation<F>(
-    name: Option<String>,
-    operation_verb: &str,
-    past_tense: &str,
-    operation_fn: F,
-    reset_mark: bool,
-) -> Result<(), fuga::FugaError>
-where
-    F: Fn(&str, &str) -> Result<(), Box<dyn std::error::Error>>,
-{
-    let target = fuga::get_marked_path()?;
-
-    // Use optimized file info retrieval to reduce system calls
-    // Note: FUGA supports operations on both files and directories
-    match fuga::get_file_info(&target) {
-        Ok(file_info) if file_info.exists => {
-            let dst_name = fuga::get_destination_name(&target, name);
-            println!(
-                "{} : Start {} {} {} from {}",
-                get_icon_information(),
-                operation_verb,
-                fuga::get_icon(&target),
-                fuga::get_colorized_text(&dst_name, true),
-                target
-            );
-            match operation_fn(&target, &dst_name) {
-                Ok(_) => {
-                    println!(
-                        "✅ : {} {} has been {}.",
-                        fuga::get_icon(&dst_name),
-                        fuga::get_colorized_text(&dst_name, true),
-                        past_tense
-                    );
-                    if reset_mark {
-                        fuga::reset_mark()?;
-                    }
-                }
-                Err(e) => return Err(fuga::FugaError::OperationFailed(e.to_string())),
-            }
-        }
-        Ok(_) => {
-            // File doesn't exist
-            if target.is_empty() {
-                return Err(fuga::FugaError::OperationFailed(
-                    "No path has been marked".to_string(),
-                ));
-            } else {
-                return Err(fuga::FugaError::FileNotFound(target));
-            }
-        }
-        Err(e) => {
-            // I/O error accessing file
-            return Err(e);
+impl ServiceContainer {
+    fn new() -> Self {
+        Self {
+            config_repo: FileConfigRepository::new(),
+            fs_service: StandardFileSystemService::new(),
+            ui_service: TerminalUIService::new(),
+            path_service: StandardPathService::new(),
         }
     }
-    Ok(())
 }
 
-fn print_completions<G: Generator>(gen: G, cmd: &mut Command) {
-    generate(gen, cmd, cmd.get_name().to_string(), &mut std::io::stdout());
+/// Execute a command using the new architecture
+fn execute_command<T: FugaCommand>(command: T) -> Result<(), fuga::FugaError> {
+    command.execute()
 }
 
 fn main() {
     let opt = Opt::parse();
+    let services = ServiceContainer::new();
 
-    match opt.command {
+    let result = match opt.command {
         Commands::Mark(mark) => {
-            if mark.show {
-                // show the marked path
-                let target = match fuga::get_marked_path() {
-                    Ok(target) => target,
-                    Err(e) => {
-                        eprintln!("❌ : {e}");
-                        std::process::exit(1);
-                    }
-                };
-                if target.is_empty() {
-                    println!("{} : No path has been marked.", get_icon_information());
-                } else {
-                    match fuga::get_file_type(&target) {
-                        fuga::TargetType::None => {
-                            println!("{} : ❓ {}", get_icon_information(), target)
-                        }
-                        _ => println!(
-                            "{} : {} {}",
-                            get_icon_information(),
-                            fuga::get_icon(&target),
-                            target
-                        ),
-                    }
-                }
+            let action = if mark.show {
+                MarkAction::ShowTarget
+            } else if mark.reset {
+                MarkAction::ResetTarget
+            } else if let Some(target) = mark.target {
+                MarkAction::SetTarget(target)
+            } else {
+                // Should not happen due to clap validation
+                eprintln!("❌ : No mark action specified");
+                std::process::exit(1);
             };
-            if mark.reset {
-                // Reset the target
-                match fuga::reset_mark() {
-                    Ok(()) => println!("✅ : The marked path has reset."),
-                    Err(e) => {
-                        eprintln!("❌ : {e}");
-                        std::process::exit(1);
-                    }
-                }
-            };
-            if let Some(target) = mark.target {
-                // Set the target
-                match fuga::get_file_type(&target) {
-                    fuga::TargetType::None => {
-                        println!(
-                            "❌ : {} is not found.",
-                            fuga::get_colorized_text(&target, true)
-                        );
-                    }
-                    _ => {
-                        let abs_path = match fuga::get_abs_path(&target) {
-                            Ok(path) => path,
-                            Err(e) => {
-                                eprintln!("❌ : {e}");
-                                std::process::exit(1);
-                            }
-                        };
-                        match fuga::store_path(&abs_path) {
-                            Ok(_) => {
-                                println!(
-                                    "✅ : {} {} has marked.",
-                                    fuga::get_icon(&target),
-                                    fuga::get_colorized_text(&target, true)
-                                );
-                            }
-                            Err(e) => {
-                                eprintln!("❌ : {e}");
-                                std::process::exit(1);
-                            }
-                        }
-                    }
-                }
-            }
+
+            let command = MarkCommand::new(
+                &services.config_repo,
+                &services.fs_service,
+                &services.ui_service,
+                action,
+            );
+
+            execute_command(command)
         }
         Commands::Copy { name } => {
-            if let Err(e) = execute_file_operation(
+            let command = CopyCommand::new(
+                &services.config_repo,
+                &services.fs_service,
+                &services.ui_service,
+                &services.path_service,
                 name,
-                "copying",
-                "copied",
-                |src, dst| {
-                    fuga::copy_items(src, dst)
-                        .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)
-                },
-                false,
-            ) {
-                eprintln!("❌ : {e}");
-                std::process::exit(1);
-            }
+            );
+
+            execute_command(command)
         }
         Commands::Move { name } => {
-            if let Err(e) = execute_file_operation(
+            let command = MoveCommand::new(
+                &services.config_repo,
+                &services.fs_service,
+                &services.ui_service,
+                &services.path_service,
                 name,
-                "moving",
-                "moved",
-                |src, dst| {
-                    fuga::move_items(src, dst)
-                        .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)
-                },
-                true,
-            ) {
-                eprintln!("❌ : {e}");
-                std::process::exit(1);
-            }
+            );
+
+            execute_command(command)
         }
         Commands::Link { name } => {
-            if let Err(e) = execute_file_operation(
+            let command = LinkCommand::new(
+                &services.config_repo,
+                &services.fs_service,
+                &services.ui_service,
+                &services.path_service,
                 name,
-                "making symbolic link",
-                "made",
-                |src, dst| {
-                    fuga::link_items(src, dst)
-                        .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)
-                },
-                false,
-            ) {
-                eprintln!("❌ : {e}");
-                std::process::exit(1);
-            }
+            );
+
+            execute_command(command)
         }
         Commands::Completion { shell } => {
-            let mut cmd = Opt::command();
-            print_completions(shell, &mut cmd);
+            let cmd = Opt::command();
+            let command = CompletionCommand::new(shell, cmd);
+            execute_command(command)
         }
         Commands::Version => {
             println!("{}", fuga::get_version());
+            Ok(())
         }
+    };
+
+    // Handle any errors that occurred during command execution
+    if let Err(e) = result {
+        eprintln!("❌ : {e}");
+        std::process::exit(1);
     }
 }
