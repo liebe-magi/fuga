@@ -8,7 +8,7 @@ use std::fs::metadata;
 #[cfg(unix)]
 use std::os::unix::fs::symlink;
 #[cfg(windows)]
-use std::os::windows::fs::symlink_file;
+use std::os::windows::fs::{symlink_dir, symlink_file};
 use std::path::Path;
 use std::rc::Rc;
 
@@ -17,7 +17,14 @@ const PRIMARY_PROGRESS_BAR_TEMPLATE: &str =
     "{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {bytes}/{total_bytes} ({eta})";
 const FALLBACK_PROGRESS_BAR_TEMPLATE: &str = "{bar:40} {bytes}/{total_bytes}";
 
+/// Type alias for file operation setup result
+type FileOperationSetup = (String, String, Box<dyn Fn(u64, u64, &str)>);
+
 /// Standard file system service implementation
+///
+/// Provides cross-platform file system operations including file/directory manipulation,
+/// path resolution, progress tracking, and symbolic link creation. Uses appropriate
+/// platform-specific APIs (Unix symlink vs Windows symlink_file/symlink_dir).
 #[derive(Default)]
 pub struct StandardFileSystemService;
 
@@ -55,6 +62,24 @@ impl StandardFileSystemService {
             pbr.set_position(copied);
             pbr.set_message(item_name.to_string());
         }
+    }
+
+    /// Common setup for copy/move operations: path resolution, duplicate check, and progress setup
+    fn setup_file_operation(&self, src: &str, dst: &str) -> FugaResult<FileOperationSetup> {
+        let abs_src = self.get_abs_path(src)?;
+        let abs_dst = self.get_abs_path(dst)?;
+
+        if abs_src == abs_dst {
+            return Err(FugaError::DuplicatePath {
+                source: abs_src,
+                destination: abs_dst,
+            });
+        }
+
+        let pbr = Rc::new(RefCell::new(None));
+        let update_pbr = Self::create_progress_update_closure(pbr);
+
+        Ok((abs_src, abs_dst, Box::new(update_pbr)))
     }
 
     /// Check if the path is an absolute path.
@@ -113,18 +138,7 @@ impl FileSystemService for StandardFileSystemService {
     }
 
     fn copy_items(&self, src: &str, dst: &str) -> FugaResult<()> {
-        let abs_src = self.get_abs_path(src)?;
-        let abs_dst = self.get_abs_path(dst)?;
-
-        if abs_src == abs_dst {
-            return Err(FugaError::DuplicatePath {
-                source: abs_src,
-                destination: abs_dst,
-            });
-        }
-
-        let pbr = Rc::new(RefCell::new(None));
-        let update_pbr = Self::create_progress_update_closure(pbr);
+        let (abs_src, abs_dst, update_pbr) = self.setup_file_operation(src, dst)?;
 
         match self.get_file_type(&abs_src) {
             TargetType::File => {
@@ -156,18 +170,7 @@ impl FileSystemService for StandardFileSystemService {
     }
 
     fn move_items(&self, src: &str, dst: &str) -> FugaResult<()> {
-        let abs_src = self.get_abs_path(src)?;
-        let abs_dst = self.get_abs_path(dst)?;
-
-        if abs_src == abs_dst {
-            return Err(FugaError::DuplicatePath {
-                source: abs_src,
-                destination: abs_dst,
-            });
-        }
-
-        let pbr = Rc::new(RefCell::new(None));
-        let update_pbr = Self::create_progress_update_closure(pbr);
+        let (abs_src, abs_dst, update_pbr) = self.setup_file_operation(src, dst)?;
 
         match self.get_file_type(&abs_src) {
             TargetType::File => {
@@ -221,8 +224,19 @@ impl FileSystemService for StandardFileSystemService {
                 }
                 #[cfg(windows)]
                 {
-                    symlink_file(&abs_src, &abs_dst)
-                        .map_err(|e| FugaError::FileSystemError(format!("Link failed: {e}")))?;
+                    // On Windows, use appropriate symlink function based on target type
+                    match self.get_file_type(&abs_src) {
+                        TargetType::Dir => {
+                            symlink_dir(&abs_src, &abs_dst).map_err(|e| {
+                                FugaError::FileSystemError(format!("Link failed: {e}"))
+                            })?;
+                        }
+                        _ => {
+                            symlink_file(&abs_src, &abs_dst).map_err(|e| {
+                                FugaError::FileSystemError(format!("Link failed: {e}"))
+                            })?;
+                        }
+                    }
                 }
             }
         }
