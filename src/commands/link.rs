@@ -1,5 +1,5 @@
 use crate::commands::{Command, CommandResult};
-use crate::fuga::FugaError;
+use crate::error::FugaError;
 use crate::traits::{ConfigRepository, FileSystemService, PathService, UIService};
 
 /// Link command for creating symbolic links to marked files/directories

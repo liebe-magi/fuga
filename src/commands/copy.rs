@@ -1,5 +1,5 @@
 use crate::commands::{Command, CommandResult};
-use crate::fuga::FugaError;
+use crate::error::FugaError;
 use crate::traits::{ConfigRepository, FileSystemService, PathService, UIService};
 
 /// Copy command for copying marked files/directories
