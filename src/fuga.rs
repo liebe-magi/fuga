@@ -1,7 +1,5 @@
 use std::env;
 
-pub use crate::error::FugaError;
-
 /// The application's name.
 pub const APP_NAME: &str = "fuga";
 

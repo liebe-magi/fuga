@@ -109,7 +109,7 @@ impl ServiceContainer {
 }
 
 /// Execute a command using the new architecture
-fn execute_command<T: FugaCommand>(command: T) -> Result<(), fuga::FugaError> {
+fn execute_command<T: FugaCommand>(command: T) -> Result<(), crate::error::FugaError> {
     command.execute()
 }
 
