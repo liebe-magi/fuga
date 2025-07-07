@@ -5,9 +5,17 @@ use indicatif::{ProgressBar, ProgressStyle};
 use std::cell::RefCell;
 use std::env;
 use std::fs::metadata;
+#[cfg(unix)]
 use std::os::unix::fs::symlink;
+#[cfg(windows)]
+use std::os::windows::fs::symlink_file;
 use std::path::Path;
 use std::rc::Rc;
+
+/// Progress bar template constants
+const PRIMARY_PROGRESS_BAR_TEMPLATE: &str =
+    "{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {bytes}/{total_bytes} ({eta})";
+const FALLBACK_PROGRESS_BAR_TEMPLATE: &str = "{bar:40} {bytes}/{total_bytes}";
 
 /// Standard file system service implementation
 #[derive(Default)]
@@ -23,13 +31,12 @@ impl StandardFileSystemService {
         let pbr = ProgressBar::new(total);
 
         // Use a fallback template if the primary one fails
-        let template = "{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {bytes}/{total_bytes} ({eta})";
         let style = ProgressStyle::default_bar()
-            .template(template)
+            .template(PRIMARY_PROGRESS_BAR_TEMPLATE)
             .unwrap_or_else(|_| {
                 // Fallback to simple template if primary fails
                 ProgressStyle::default_bar()
-                    .template("{bar:40} {bytes}/{total_bytes}")
+                    .template(FALLBACK_PROGRESS_BAR_TEMPLATE)
                     .unwrap_or_else(|_| ProgressStyle::default_bar())
             })
             .progress_chars("#>-");
@@ -207,8 +214,16 @@ impl FileSystemService for StandardFileSystemService {
                 return Err(FugaError::FileNotFound(abs_src));
             }
             _ => {
-                symlink(&abs_src, &abs_dst)
-                    .map_err(|e| FugaError::FileSystemError(format!("Link failed: {e}")))?;
+                #[cfg(unix)]
+                {
+                    symlink(&abs_src, &abs_dst)
+                        .map_err(|e| FugaError::FileSystemError(format!("Link failed: {e}")))?;
+                }
+                #[cfg(windows)]
+                {
+                    symlink_file(&abs_src, &abs_dst)
+                        .map_err(|e| FugaError::FileSystemError(format!("Link failed: {e}")))?;
+                }
             }
         }
 
