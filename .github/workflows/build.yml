@@ -173,13 +173,13 @@ jobs:
     needs: [build, draft-release]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           name: draft-release
       - id: upload-url
         run: |
           echo "url=$(cat release_upload_url.txt)" >> $GITHUB_OUTPUT
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           name: build-${{ matrix.target }}-${{ needs.build.outputs.version }}
           path: build/
