@@ -37,22 +37,60 @@ impl ConfigRepository for FileConfigRepository {
         Ok(())
     }
 
-    fn store_path(&self, target: &str) -> FugaResult<()> {
+    fn set_marked_targets(&self, targets: &[String]) -> FugaResult<()> {
         let mut config = self.load_config()?;
-        config.data.target = target.to_string();
-        self.store_config(&config)?;
-        Ok(())
+        config.data.targets = targets.to_vec();
+        config.data.target = None;
+        self.store_config(&config)
     }
 
-    fn get_marked_path(&self) -> FugaResult<String> {
-        let config = self.load_config()?;
-        Ok(config.data.target)
+    fn get_marked_targets(&self) -> FugaResult<Vec<String>> {
+        let mut config = self.load_config()?;
+        let mut mutated = false;
+
+        // Remove empty strings that may be left over from legacy state
+        if config
+            .data
+            .targets
+            .iter()
+            .any(|value| value.trim().is_empty())
+        {
+            config.data.targets.retain(|value| !value.trim().is_empty());
+            mutated = true;
+        }
+
+        if !config.data.targets.is_empty() {
+            if config.data.target.is_some() {
+                config.data.target = None;
+                mutated = true;
+            }
+
+            if mutated {
+                self.store_config(&config)?;
+            }
+
+            return Ok(config.data.targets.clone());
+        }
+
+        let legacy = config
+            .data
+            .target
+            .take()
+            .filter(|legacy| !legacy.trim().is_empty());
+
+        if let Some(legacy_target) = legacy {
+            config.data.targets = vec![legacy_target];
+            mutated = true;
+        }
+
+        if mutated {
+            self.store_config(&config)?;
+        }
+
+        Ok(config.data.targets.clone())
     }
 
-    fn reset_mark(&self) -> FugaResult<()> {
-        let mut config = self.load_config()?;
-        config.data.target = "".to_string();
-        self.store_config(&config)?;
-        Ok(())
+    fn reset_marks(&self) -> FugaResult<()> {
+        self.set_marked_targets(&[])
     }
 }

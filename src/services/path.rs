@@ -18,18 +18,18 @@ impl PathService for StandardPathService {
         &self,
         target: &str,
         target_info: &FileInfo,
-        name: Option<String>,
+        name: Option<&str>,
         fs_service: &dyn FileSystemService,
     ) -> FugaResult<String> {
         match name {
             Some(dest) => {
                 // Check if destination is a directory using file system service
-                match fs_service.get_file_info(&dest)? {
+                match fs_service.get_file_info(dest)? {
                     dest_info if dest_info.exists && dest_info.is_dir => {
                         // Get target name from pre-fetched info
                         match &target_info.name {
                             Some(target_name) => {
-                                let mut composed = PathBuf::from(&dest);
+                                let mut composed = PathBuf::from(dest);
                                 composed.push(target_name);
                                 composed.into_os_string().into_string().map_err(|_| {
                                     FugaError::OperationFailed(
@@ -38,10 +38,10 @@ impl PathService for StandardPathService {
                                     )
                                 })
                             }
-                            None => Ok(dest), // Fallback if can't get name
+                            None => Ok(dest.to_string()), // Fallback if can't get name
                         }
                     }
-                    _ => Ok(dest), // Not a directory or doesn't exist, use as-is
+                    _ => Ok(dest.to_string()), // Not a directory or doesn't exist, use as-is
                 }
             }
             None => {

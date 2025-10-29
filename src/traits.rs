@@ -11,14 +11,14 @@ pub trait ConfigRepository {
     /// Store the configuration
     fn store_config(&self, config: &AppConfig) -> FugaResult<()>;
 
-    /// Store a target path
-    fn store_path(&self, target: &str) -> FugaResult<()>;
+    /// Persist the full list of marked targets
+    fn set_marked_targets(&self, targets: &[String]) -> FugaResult<()>;
 
-    /// Get the marked path
-    fn get_marked_path(&self) -> FugaResult<String>;
+    /// Retrieve the list of marked targets, migrating legacy state if required
+    fn get_marked_targets(&self) -> FugaResult<Vec<String>>;
 
-    /// Reset the marked path
-    fn reset_mark(&self) -> FugaResult<()>;
+    /// Reset the marked targets to an empty list
+    fn reset_marks(&self) -> FugaResult<()>;
 }
 
 /// Trait for file system operations
@@ -61,7 +61,7 @@ pub trait PathService {
         &self,
         target: &str,
         target_info: &FileInfo,
-        name: Option<String>,
+        name: Option<&str>,
         fs_service: &dyn FileSystemService,
     ) -> FugaResult<String>;
 }

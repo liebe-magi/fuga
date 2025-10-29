@@ -6,7 +6,7 @@ mod services;
 mod traits;
 mod ui;
 
-use clap::{ArgGroup, Args, CommandFactory, Parser, Subcommand, ValueHint};
+use clap::{Args, CommandFactory, Parser, Subcommand, ValueHint};
 use clap_complete::Shell;
 use once_cell::sync::Lazy;
 
@@ -44,20 +44,20 @@ enum Commands {
     /// Copy the marked file or directory
     Copy {
         /// The name for the copied file or directory
-        #[arg(value_hint = ValueHint::AnyPath)]
-        name: Option<String>,
+        #[arg(value_hint = ValueHint::AnyPath, value_name = "DESTINATION")]
+        destination: Option<String>,
     },
     /// Move the marked file or directory
     Move {
         /// The name for the moved file or directory
-        #[arg(value_hint = ValueHint::AnyPath)]
-        name: Option<String>,
+        #[arg(value_hint = ValueHint::AnyPath, value_name = "DESTINATION")]
+        destination: Option<String>,
     },
     /// Make a symbolic link to the marked file or directory
     Link {
         /// The name for the symbolic link
-        #[arg(value_hint = ValueHint::AnyPath)]
-        name: Option<String>,
+        #[arg(value_hint = ValueHint::AnyPath, value_name = "DESTINATION")]
+        destination: Option<String>,
     },
     /// Generate the completion script
     Completion {
@@ -70,22 +70,21 @@ enum Commands {
 }
 
 #[derive(Args, Debug, PartialEq)]
-#[command(group(
-            ArgGroup::new("mark")
-                .required(true)
-                .args(&["target", "show", "reset"]),
-        ))]
 struct Mark {
-    /// The path you want to mark
-    #[arg(value_hint = ValueHint::AnyPath)]
-    target: Option<String>,
+    /// Paths you want to mark
+    #[arg(value_hint = ValueHint::AnyPath, value_name = "PATH", num_args = 0.., conflicts_with_all = ["list", "reset"])]
+    paths: Vec<String>,
 
-    /// Show the marked path
-    #[arg(short = 's', long = "show")]
-    show: bool,
+    /// Add the provided paths to the existing mark list
+    #[arg(long = "add", conflicts_with_all = ["list", "reset"])]
+    add: bool,
 
-    /// Reset the marked path
-    #[arg(short = 'r', long = "reset")]
+    /// List the marked targets
+    #[arg(long = "list", conflicts_with = "reset")]
+    list: bool,
+
+    /// Reset the mark list
+    #[arg(long = "reset", conflicts_with = "list")]
     reset: bool,
 }
 
@@ -119,15 +118,22 @@ fn main() {
 
     let result = match opt.command {
         Commands::Mark(mark) => {
-            let action = if mark.show {
-                MarkAction::Show
+            let action = if mark.list {
+                MarkAction::List
             } else if mark.reset {
                 MarkAction::Reset
-            } else if let Some(target) = mark.target {
-                MarkAction::Set(target)
+            } else if mark.add {
+                if mark.paths.is_empty() {
+                    eprintln!("❌ : --add requires at least one path to mark");
+                    std::process::exit(1);
+                }
+                MarkAction::Add(mark.paths)
+            } else if !mark.paths.is_empty() {
+                MarkAction::Set(mark.paths)
             } else {
-                // Should not happen due to clap validation
-                eprintln!("❌ : No mark action specified");
+                eprintln!(
+                    "❌ : Provide at least one path, --add with paths, or use --list/--reset"
+                );
                 std::process::exit(1);
             };
 
@@ -140,35 +146,35 @@ fn main() {
 
             execute_command(command)
         }
-        Commands::Copy { name } => {
+        Commands::Copy { destination } => {
             let command = CopyCommand::new(
                 &services.config_repo,
                 &services.fs_service,
                 &services.ui_service,
                 &services.path_service,
-                name,
+                destination,
             );
 
             execute_command(command)
         }
-        Commands::Move { name } => {
+        Commands::Move { destination } => {
             let command = MoveCommand::new(
                 &services.config_repo,
                 &services.fs_service,
                 &services.ui_service,
                 &services.path_service,
-                name,
+                destination,
             );
 
             execute_command(command)
         }
-        Commands::Link { name } => {
+        Commands::Link { destination } => {
             let command = LinkCommand::new(
                 &services.config_repo,
                 &services.fs_service,
                 &services.ui_service,
                 &services.path_service,
-                name,
+                destination,
             );
 
             execute_command(command)
