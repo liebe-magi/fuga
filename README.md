@@ -16,7 +16,7 @@ A CLI tool to operate files or directories in 2 steps.
 
 - `fuga` is a CLI tool that performs file operations in two steps.
 - Developed as an alternative to commands like `mv`, `cp`, and `ln`.
-- Mark files or directories to operate on using `fuga mark`, and then perform copy or move operations after navigating to another directory.
+- Mark one or more files or directories using `fuga mark`, and then perform copy/move/link operations together after navigating to another directory.
 
 ## 📦 INSTALLATION
 
@@ -55,10 +55,10 @@ A CLI tool to operate files or directories in 2 steps.
 Usage: fuga <COMMAND>
 
 Commands:
-  mark        Set the path of the target file or directory
-  copy        Copy the marked file or directory
-  move        Move the marked file or directory
-  link        Make a symbolic link to the marked file or directory
+  mark        Manage the marked targets
+  copy        Copy the marked targets
+  move        Move the marked targets
+  link        Make symbolic links to the marked targets
   completion  Generate the completion script
   version     Show the version of the tool
   help        Print this message or the help of the given subcommand(s)
@@ -68,27 +68,43 @@ Options:
   -V, --version  Print version
 ```
 
-### Setting the Target File
+### Managing Marked Targets
 
-- Mark the file or directory you want to operate on with `fuga mark <TARGET>`.
-
-```
-$ fuga mark target_file.txt
-✅ : 📄 target_file.txt has marked.
-```
-
-- To check the currently marked file or directory, use `fuga mark --show`.
+- Mark the files or directories you want to operate on with `fuga mark <PATH...>`.
 
 ```
-$ fuga mark --show
-ℹ️ : 📄 /home/user/path/to/file/target_file.txt
+$ fuga mark target_file.txt docs
+✅ : 📄 /home/user/path/to/target_file.txt marked.
+✅ : 📁 /home/user/path/to/docs marked.
+ℹ️  : Mark list now tracks 2 target(s).
 ```
 
-- To unmark a file or directory, use `fuga mark --reset`.
+- To add more paths without duplicating existing entries, use `fuga mark --add <PATH...>`.
+
+```
+$ fuga mark --add images/*.png
+✅ : 📄 /home/user/path/to/images/banner.png added.
+✅ : 📄 /home/user/path/to/images/logo.png added.
+ℹ️  : Mark list now tracks 4 target(s).
+```
+
+- To list the currently marked targets, use `fuga mark --list`.
+
+```
+$ fuga mark --list
+ℹ️  : Marked targets:
+📄 /home/user/path/to/target_file.txt
+📁 /home/user/path/to/docs
+📄 /home/user/path/to/images/banner.png
+📄 /home/user/path/to/images/logo.png
+```
+
+- To clear all marked targets, use `fuga mark --reset`.
 
 ```
 $ fuga mark --reset
-✅ : The marked path has reset.
+✅ : Marked targets cleared.
+ℹ️  : Mark list now tracks 0 target(s).
 ```
 
 ### File Operations
@@ -97,26 +113,28 @@ Three file operations are possible: `Copy`, `Move`, and `Symbolic Link creation`
 
 #### Copy
 
-- Navigate to the destination directory and use `fuga copy` to copy the marked file or directory.
+- Navigate to the destination directory and use `fuga copy` to copy all marked files or directories.
 
 ```
 $ cd test_dir_copy
 
 $ fuga copy
-ℹ️ : Start copying 📄 target_file.txt from /home/user/path/to/file/target_file.txt
-✅ : 📄 target_file.txt has copied.
+ℹ️  : Copying 📄 /home/user/path/to/target_file.txt -> /current/dir/target_file.txt
+✅ : 📄 /current/dir/target_file.txt copied.
+ℹ️  : Copying 📁 /home/user/path/to/docs -> /current/dir/docs
+✅ : 📁 /current/dir/docs copied.
 ```
 
-- You can also specify the destination directory or file name.
+- You can also specify the destination directory, or a file name when exactly one target is marked.
 
 ```
 $ fuga copy test_dir_copy
-ℹ️ : Start copying 📄 test_dir_copy/target_file.txt from /home/user/path/to/file/target_file.txt
-✅ : 📄 test_dir_copy/target_file.txt has copied.
+ℹ️  : Copying 📄 /home/user/path/to/target_file.txt -> test_dir_copy/target_file.txt
+✅ : 📄 test_dir_copy/target_file.txt copied.
 
 $ fuga copy copy.txt
-ℹ️ : Start copying 📄 copy.txt from /home/user/path/to/file/target_file.txt
-✅ : 📄 copy.txt has copied.
+ℹ️  : Copying 📄 /home/user/path/to/target_file.txt -> copy.txt
+✅ : 📄 copy.txt copied.
 ```
 
 #### Move
@@ -127,20 +145,23 @@ $ fuga copy copy.txt
 $ cd test_dir_move
 
 $ fuga move
-ℹ️ : Start moving 📄 target_file.txt from /home/user/path/to/file/target_file.txt
-✅ : 📄 target_file.txt has moved.
+ℹ️  : Moving 📄 /home/user/path/to/target_file.txt -> /current/dir/target_file.txt
+✅ : 📄 /current/dir/target_file.txt moved.
+ℹ️  : Moving 📁 /home/user/path/to/docs -> /current/dir/docs
+✅ : 📁 /current/dir/docs moved.
+ℹ️  : Mark list cleared after move.
 ```
 
 - Similar to copying, you can specify the destination directory or file name.
 
 ```
 $ fuga move test_dir_move
-ℹ️ : Start copying 📄 test_dir_move/target_file.txt from /home/user/path/to/file/target_file.txt
-✅ : 📄 test_dir_move/target_file.txt has moved.
+ℹ️  : Moving 📄 /home/user/path/to/target_file.txt -> test_dir_move/target_file.txt
+✅ : 📄 test_dir_move/target_file.txt moved.
 
 $ fuga move move.txt
-ℹ️ : Start moving 📄 move.txt from /home/user/path/to/file/target_file.txt
-✅ : 📄 move.txt has moved.
+ℹ️  : Moving 📄 /home/user/path/to/target_file.txt -> move.txt
+✅ : 📄 move.txt moved.
 ```
 
 #### Symbolic Link
@@ -151,20 +172,20 @@ $ fuga move move.txt
 $ cd test_dir_link
 
 $ fuga link
-ℹ️ : Start making symbolic link 📄 target_file.txt from /home/user/path/to/file/target_file.txt
-✅ : 📄 target_file.txt has made.
+ℹ️  : Linking 📄 /home/user/path/to/target_file.txt -> /current/dir/target_file.txt
+✅ : 📄 /current/dir/target_file.txt linked.
 ```
 
 - You can also specify the destination directory or file name for the symbolic link.
 
 ```
 $ fuga link test_dir_link
-ℹ️ : Start making symbolic link 📄 test_dir_link/target_file.txt from /home/user/path/to/file/target_file.txt
-✅ : 📄 test_dir_link/target_file.txt has made.
+ℹ️  : Linking 📄 /home/user/path/to/target_file.txt -> test_dir_link/target_file.txt
+✅ : 📄 test_dir_link/target_file.txt linked.
 
 $ fuga link link.txt
-ℹ️ : Start making symbolic link 📄 link.txt from /home/user/path/to/file/target_file.txt
-✅ : 📄 link.txt has made.
+ℹ️  : Linking 📄 /home/user/path/to/target_file.txt -> link.txt
+✅ : 📄 link.txt linked.
 ```
 
 ### Generating Completion Scripts

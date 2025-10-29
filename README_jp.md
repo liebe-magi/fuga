@@ -12,7 +12,7 @@ A CLI tool to operate files or directories in 2 steps.
 
 - `fuga`はファイル操作を2ステップで行うCLIツールです。
 - `mv`,`cp`,`ln`コマンドなどの代替コマンドとして開発しました。
-- 操作対象のファイルやディレクトリを`fuga mark`によりマーキングし、別のディレクトリに移動した後にコピーや移動を実行できます。
+- `fuga mark`で操作対象のファイルやディレクトリを複数マーキングし、別ディレクトリに移動してからまとめてコピー/移動/リンクできます。
 
 ## 📦 INSTALLATION
 
@@ -51,10 +51,10 @@ A CLI tool to operate files or directories in 2 steps.
 Usage: fuga <COMMAND>
 
 Commands:
-  mark        Set the path of the target file or directory
-  copy        Copy the marked file or directory
-  move        Move the marked file or directory
-  link        Make a symbolic link to the marked file or directory
+  mark        Manage the marked targets
+  copy        Copy the marked targets
+  move        Move the marked targets
+  link        Make symbolic links to the marked targets
   completion  Generate the completion script
   version     Show the version of the tool
   help        Print this message or the help of the given subcommand(s)
@@ -64,27 +64,43 @@ Options:
   -V, --version  Print version
 ```
 
-### 操作対象ファイルの設定
+### マーク対象の管理
 
-- `fuga mark <TARGET>`で操作対象とするファイルやディレクトリをマーキングします。
-
-```
-$ fuga mark target_file.txt
-✅ : 📄 target_file.txt has marked.
-```
-
-- 現在マーキング中のファイルやディレクトリを確認したいときは、`fuga mark --show`で確認できます。
+- `fuga mark <PATH...>`で操作対象とするファイルやディレクトリを一括マーキングします。
 
 ```
-$ fuga mark --show
-ℹ️ : 📄 /home/user/path/to/file/target_file.txt
+$ fuga mark target_file.txt docs
+✅ : 📄 /home/user/path/to/target_file.txt marked.
+✅ : 📁 /home/user/path/to/docs marked.
+ℹ️  : Mark list now tracks 2 target(s).
 ```
 
-- マーキングを解除したい場合は、`fuga mark --reset`で解除できます。
+- 既存のマークに重複なく追加したいときは、`fuga mark --add <PATH...>`を利用します。
+
+```
+$ fuga mark --add images/*.png
+✅ : 📄 /home/user/path/to/images/banner.png added.
+✅ : 📄 /home/user/path/to/images/logo.png added.
+ℹ️  : Mark list now tracks 4 target(s).
+```
+
+- 現在マーキング中のターゲットを確認したい場合は、`fuga mark --list`で一覧表示できます。
+
+```
+$ fuga mark --list
+ℹ️  : Marked targets:
+📄 /home/user/path/to/target_file.txt
+📁 /home/user/path/to/docs
+📄 /home/user/path/to/images/banner.png
+📄 /home/user/path/to/images/logo.png
+```
+
+- マーキングを全て解除したい場合は、`fuga mark --reset`を利用します。
 
 ```
 $ fuga mark --reset
-✅ : The marked path has reset.
+✅ : Marked targets cleared.
+ℹ️  : Mark list now tracks 0 target(s).
 ```
 
 ### ファイル操作
@@ -99,20 +115,22 @@ $ fuga mark --reset
 $ cd test_dir_copy
 
 $ fuga copy
-ℹ️ : Start copying 📄 target_file.txt from /home/user/path/to/file/target_file.txt
-✅ : 📄 target_file.txt has copied.
+ℹ️  : Copying 📄 /home/user/path/to/target_file.txt -> /current/dir/target_file.txt
+✅ : 📄 /current/dir/target_file.txt copied.
+ℹ️  : Copying 📁 /home/user/path/to/docs -> /current/dir/docs
+✅ : 📁 /current/dir/docs copied。
 ```
 
 - コピー先のディレクトリやファイル名を与えることも可能です。
 
 ```
 $ fuga copy test_dir_copy
-ℹ️ : Start copying 📄 test_dir_copy/target_file.txt from /home/user/path/to/file/target_file.txt
-✅ : 📄 test_dir_copy/target_file.txt has copied.
+ℹ️  : Copying 📄 /home/user/path/to/target_file.txt -> test_dir_copy/target_file.txt
+✅ : 📄 test_dir_copy/target_file.txt copied.
 
 $ fuga copy copy.txt
-ℹ️ : Start copying 📄 copy.txt from /home/user/path/to/file/target_file.txt
-✅ : 📄 copy.txt has copied.
+ℹ️  : Copying 📄 /home/user/path/to/target_file.txt -> copy.txt
+✅ : 📄 copy.txt copied.
 ```
 
 #### 移動
@@ -123,20 +141,23 @@ $ fuga copy copy.txt
 $ cd test_dir_move
 
 $ fuga move
-ℹ️ : Start moving 📄 target_file.txt from /home/user/path/to/file/target_file.txt
-✅ : 📄 target_file.txt has moved.
+ℹ️  : Moving 📄 /home/user/path/to/target_file.txt -> /current/dir/target_file.txt
+✅ : 📄 /current/dir/target_file.txt moved.
+ℹ️  : Moving 📁 /home/user/path/to/docs -> /current/dir/docs
+✅ : 📁 /current/dir/docs moved。
+ℹ️  : Mark list cleared after move.
 ```
 
 - コピー同様、移動先のディレクトリやファイル名を与えることも可能です。
 
 ```
 $ fuga move test_dir_move
-ℹ️ : Start copying 📄 test_dir_move/target_file.txt from /home/user/path/to/file/target_file.txt
-✅ : 📄 test_dir_move/target_file.txt has moved.
+ℹ️  : Moving 📄 /home/user/path/to/target_file.txt -> test_dir_move/target_file.txt
+✅ : 📄 test_dir_move/target_file.txt moved.
 
 $ fuga move move.txt
-ℹ️ : Start moving 📄 move.txt from /home/user/path/to/file/target_file.txt
-✅ : 📄 move.txt has moved.
+ℹ️  : Moving 📄 /home/user/path/to/target_file.txt -> move.txt
+✅ : 📄 move.txt moved.
 ```
 
 #### シンボリックリンク
@@ -147,20 +168,20 @@ $ fuga move move.txt
 $ cd test_dir_link
 
 $ fuga link
-ℹ️ : Start making symbolic link 📄 target_file.txt from /home/user/path/to/file/target_file.txt
-✅ : 📄 target_file.txt has made.
+ℹ️  : Linking 📄 /home/user/path/to/target_file.txt -> /current/dir/target_file.txt
+✅ : 📄 /current/dir/target_file.txt linked.
 ```
 
 - シンボリックリンク作成先のディレクトリやファイル名を与えることも可能です。
 
 ```
 $ fuga link test_dir_link
-ℹ️ : Start making symbolic link 📄 test_dir_link/target_file.txt from /home/user/path/to/file/target_file.txt
-✅ : 📄 test_dir_link/target_file.txt has made.
+ℹ️  : Linking 📄 /home/user/path/to/target_file.txt -> test_dir_link/target_file.txt
+✅ : 📄 test_dir_link/target_file.txt linked.
 
 $ fuga link link.txt
-ℹ️ : Start making symbolic link 📄 link.txt from /home/user/path/to/file/target_file.txt
-✅ : 📄 link.txt has made.
+ℹ️  : Linking 📄 /home/user/path/to/target_file.txt -> link.txt
+✅ : 📄 link.txt linked.
 ```
 
 ### 補完スクリプトの生成
