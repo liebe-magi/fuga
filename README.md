@@ -17,6 +17,7 @@ A CLI tool to operate files or directories in 2 steps.
 - `fuga` is a CLI tool that performs file operations in two steps.
 - Developed as an alternative to commands like `mv`, `cp`, and `ln`.
 - Mark one or more files or directories using `fuga mark`, and then perform copy/move/link operations together after navigating to another directory.
+- Launching `fuga` without arguments opens an interactive dashboard TUI so you can browse, mark, and run copy/move/link actions without leaving the terminal.
 
 ## 📦 INSTALLATION
 
@@ -44,10 +45,12 @@ cargo install fuga
 
 ```
 $ fuga -V
-fuga v0.1.1
+fuga v1.0.0
 ```
 
 ## 📦 USAGE
+
+> Running `fuga` without a subcommand launches the dashboard TUI. Use the subcommands below when you prefer scripted CLI flows.
 
 ```
 A CLI tool to operate files or directories in 2 steps.
@@ -67,6 +70,14 @@ Options:
   -h, --help     Print help
   -V, --version  Print version
 ```
+
+### Interactive Dashboard (TUI)
+
+- Launch the dashboard by running `fuga` with no arguments.
+- Browse the current directory, toggle hidden files with `.` or `Ctrl+h`, and filter entries with `/` plus fuzzy queries.
+- Move the cursor with arrow keys or `j`/`k`, open directories with `Enter`/`l`, and return to the parent with `h` or `Backspace`.
+- Press `m` or space to toggle marks, `Ctrl+r`/`R` to clear the mark list, and `?` to view the in-app help overlay.
+- Exit with `c`, `v`, or `s` to copy, move, or link the marked targets into the directory you were browsing, or `q` to leave without changes.
 
 ### Managing Marked Targets
 
