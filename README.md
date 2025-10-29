@@ -1,6 +1,8 @@
 [![Crates.io](https://img.shields.io/crates/v/fuga)](https://crates.io/crates/fuga)
 [![Crates.io](https://img.shields.io/crates/l/fuga)](https://github.com/liebe-magi/fuga/blob/main/LICENSE)
-[![build](https://github.com/liebe-magi/fuga/actions/workflows/build.yml/badge.svg?branch=main&event=push)](https://github.com/liebe-magi/fuga/actions/workflows/build.yml)
+[![build](https://github.com/liebe-magi/fuga/actions/workflows/build.yml/badge.svg?branch=main&event=push)](https://github.com/liebe-magi/fuga/actions/workflows/build.yml)<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
+[![All Contributors](https://img.shields.io/badge/all_contributors-1-orange.svg?style=flat-square)](#contributors-)
+<!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 # 📦 FUGA 📦
 
@@ -14,7 +16,8 @@ A CLI tool to operate files or directories in 2 steps.
 
 - `fuga` is a CLI tool that performs file operations in two steps.
 - Developed as an alternative to commands like `mv`, `cp`, and `ln`.
-- Mark files or directories to operate on using `fuga mark`, and then perform copy or move operations after navigating to another directory.
+- Mark one or more files or directories using `fuga mark`, and then perform copy/move/link operations together after navigating to another directory.
+- Launching `fuga` without arguments opens an interactive dashboard TUI so you can browse, mark, and run copy/move/link actions without leaving the terminal.
 
 ## 📦 INSTALLATION
 
@@ -42,10 +45,12 @@ cargo install fuga
 
 ```
 $ fuga -V
-fuga v0.1.1
+fuga v1.0.0
 ```
 
 ## 📦 USAGE
+
+> Running `fuga` without a subcommand launches the dashboard TUI. Use the subcommands below when you prefer scripted CLI flows.
 
 ```
 A CLI tool to operate files or directories in 2 steps.
@@ -53,10 +58,10 @@ A CLI tool to operate files or directories in 2 steps.
 Usage: fuga <COMMAND>
 
 Commands:
-  mark        Set the path of the target file or directory
-  copy        Copy the marked file or directory
-  move        Move the marked file or directory
-  link        Make a symbolic link to the marked file or directory
+  mark        Manage the marked targets
+  copy        Copy the marked targets
+  move        Move the marked targets
+  link        Make symbolic links to the marked targets
   completion  Generate the completion script
   version     Show the version of the tool
   help        Print this message or the help of the given subcommand(s)
@@ -66,27 +71,51 @@ Options:
   -V, --version  Print version
 ```
 
-### Setting the Target File
+### Interactive Dashboard (TUI)
 
-- Mark the file or directory you want to operate on with `fuga mark <TARGET>`.
+- Launch the dashboard by running `fuga` with no arguments.
+- Browse the current directory, toggle hidden files with `.` or `Ctrl+h`, and filter entries with `/` plus fuzzy queries.
+- Move the cursor with arrow keys or `j`/`k`, open directories with `Enter`/`l`, and return to the parent with `h` or `Backspace`.
+- Press `m` or space to toggle marks, `Ctrl+r`/`R` to clear the mark list, and `?` to view the in-app help overlay.
+- Exit with `c`, `v`, or `s` to copy, move, or link the marked targets into the directory you were browsing, or `q` to leave without changes.
+
+### Managing Marked Targets
+
+- Mark the files or directories you want to operate on with `fuga mark <PATH...>`.
 
 ```
-$ fuga mark target_file.txt
-✅ : 📄 target_file.txt has marked.
+$ fuga mark target_file.txt docs
+✅ : 📄 /home/user/path/to/target_file.txt marked.
+✅ : 📁 /home/user/path/to/docs marked.
+ℹ️  : Mark list now tracks 2 target(s).
 ```
 
-- To check the currently marked file or directory, use `fuga mark --show`.
+- To add more paths without duplicating existing entries, use `fuga mark --add <PATH...>`.
 
 ```
-$ fuga mark --show
-ℹ️ : 📄 /home/user/path/to/file/target_file.txt
+$ fuga mark --add images/*.png
+✅ : 📄 /home/user/path/to/images/banner.png added.
+✅ : 📄 /home/user/path/to/images/logo.png added.
+ℹ️  : Mark list now tracks 4 target(s).
 ```
 
-- To unmark a file or directory, use `fuga mark --reset`.
+- To list the currently marked targets, use `fuga mark --list`.
+
+```
+$ fuga mark --list
+ℹ️  : Marked targets:
+📄 /home/user/path/to/target_file.txt
+📁 /home/user/path/to/docs
+📄 /home/user/path/to/images/banner.png
+📄 /home/user/path/to/images/logo.png
+```
+
+- To clear all marked targets, use `fuga mark --reset`.
 
 ```
 $ fuga mark --reset
-✅ : The marked path has reset.
+✅ : Marked targets cleared.
+ℹ️  : Mark list now tracks 0 target(s).
 ```
 
 ### File Operations
@@ -95,26 +124,28 @@ Three file operations are possible: `Copy`, `Move`, and `Symbolic Link creation`
 
 #### Copy
 
-- Navigate to the destination directory and use `fuga copy` to copy the marked file or directory.
+- Navigate to the destination directory and use `fuga copy` to copy all marked files or directories.
 
 ```
 $ cd test_dir_copy
 
 $ fuga copy
-ℹ️ : Start copying 📄 target_file.txt from /home/user/path/to/file/target_file.txt
-✅ : 📄 target_file.txt has copied.
+ℹ️  : Copying 📄 /home/user/path/to/target_file.txt -> /current/dir/target_file.txt
+✅ : 📄 /current/dir/target_file.txt copied.
+ℹ️  : Copying 📁 /home/user/path/to/docs -> /current/dir/docs
+✅ : 📁 /current/dir/docs copied.
 ```
 
-- You can also specify the destination directory or file name.
+- You can also specify the destination directory, or a file name when exactly one target is marked.
 
 ```
 $ fuga copy test_dir_copy
-ℹ️ : Start copying 📄 test_dir_copy/target_file.txt from /home/user/path/to/file/target_file.txt
-✅ : 📄 test_dir_copy/target_file.txt has copied.
+ℹ️  : Copying 📄 /home/user/path/to/target_file.txt -> test_dir_copy/target_file.txt
+✅ : 📄 test_dir_copy/target_file.txt copied.
 
 $ fuga copy copy.txt
-ℹ️ : Start copying 📄 copy.txt from /home/user/path/to/file/target_file.txt
-✅ : 📄 copy.txt has copied.
+ℹ️  : Copying 📄 /home/user/path/to/target_file.txt -> copy.txt
+✅ : 📄 copy.txt copied.
 ```
 
 #### Move
@@ -125,20 +156,23 @@ $ fuga copy copy.txt
 $ cd test_dir_move
 
 $ fuga move
-ℹ️ : Start moving 📄 target_file.txt from /home/user/path/to/file/target_file.txt
-✅ : 📄 target_file.txt has moved.
+ℹ️  : Moving 📄 /home/user/path/to/target_file.txt -> /current/dir/target_file.txt
+✅ : 📄 /current/dir/target_file.txt moved.
+ℹ️  : Moving 📁 /home/user/path/to/docs -> /current/dir/docs
+✅ : 📁 /current/dir/docs moved.
+ℹ️  : Mark list cleared after move.
 ```
 
 - Similar to copying, you can specify the destination directory or file name.
 
 ```
 $ fuga move test_dir_move
-ℹ️ : Start copying 📄 test_dir_move/target_file.txt from /home/user/path/to/file/target_file.txt
-✅ : 📄 test_dir_move/target_file.txt has moved.
+ℹ️  : Moving 📄 /home/user/path/to/target_file.txt -> test_dir_move/target_file.txt
+✅ : 📄 test_dir_move/target_file.txt moved.
 
 $ fuga move move.txt
-ℹ️ : Start moving 📄 move.txt from /home/user/path/to/file/target_file.txt
-✅ : 📄 move.txt has moved.
+ℹ️  : Moving 📄 /home/user/path/to/target_file.txt -> move.txt
+✅ : 📄 move.txt moved.
 ```
 
 #### Symbolic Link
@@ -149,20 +183,20 @@ $ fuga move move.txt
 $ cd test_dir_link
 
 $ fuga link
-ℹ️ : Start making symbolic link 📄 target_file.txt from /home/user/path/to/file/target_file.txt
-✅ : 📄 target_file.txt has made.
+ℹ️  : Linking 📄 /home/user/path/to/target_file.txt -> /current/dir/target_file.txt
+✅ : 📄 /current/dir/target_file.txt linked.
 ```
 
 - You can also specify the destination directory or file name for the symbolic link.
 
 ```
 $ fuga link test_dir_link
-ℹ️ : Start making symbolic link 📄 test_dir_link/target_file.txt from /home/user/path/to/file/target_file.txt
-✅ : 📄 test_dir_link/target_file.txt has made.
+ℹ️  : Linking 📄 /home/user/path/to/target_file.txt -> test_dir_link/target_file.txt
+✅ : 📄 test_dir_link/target_file.txt linked.
 
 $ fuga link link.txt
-ℹ️ : Start making symbolic link 📄 link.txt from /home/user/path/to/file/target_file.txt
-✅ : 📄 link.txt has made.
+ℹ️  : Linking 📄 /home/user/path/to/target_file.txt -> link.txt
+✅ : 📄 link.txt linked.
 ```
 
 ### Generating Completion Scripts
@@ -178,3 +212,24 @@ $ fuga link link.txt
 # For fish
 $ fuga completion fish > ~/.config/fish/completions/fuga.fish
 ```
+## Contributors ✨
+
+Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+<table>
+  <tbody>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://hackfront.dev"><img src="https://avatars.githubusercontent.com/u/38152917?v=4?s=100" width="100px;" alt="りーべ"/><br /><sub><b>りーべ</b></sub></a><br /><a href="#projectManagement-liebe-magi" title="Project Management">📆</a> <a href="https://github.com/liebe-magi/fuga/pulls?q=is%3Apr+reviewed-by%3Aliebe-magi" title="Reviewed Pull Requests">👀</a> <a href="https://github.com/liebe-magi/fuga/commits?author=liebe-magi" title="Code">💻</a> <a href="https://github.com/liebe-magi/fuga/commits?author=liebe-magi" title="Documentation">📖</a></td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
+
+This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind welcome!
