@@ -9,7 +9,7 @@ use std::fs::metadata;
 use std::os::unix::fs::symlink;
 #[cfg(windows)]
 use std::os::windows::fs::{symlink_dir, symlink_file};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
 /// Progress bar template constants
@@ -31,6 +31,14 @@ pub struct StandardFileSystemService;
 impl StandardFileSystemService {
     pub fn new() -> Self {
         Self
+    }
+
+    fn pathbuf_to_string(path: PathBuf) -> FugaResult<String> {
+        path.into_os_string().into_string().map_err(|_| {
+            FugaError::OperationFailed(
+                "Path contains bytes that are not valid UTF-8. Rename the file or operate from a UTF-8 compatible directory.".to_string(),
+            )
+        })
     }
 
     /// Create a progress bar with shared styling.
@@ -97,7 +105,7 @@ impl FileSystemService for StandardFileSystemService {
                 is_dir: metadata.is_dir(),
                 name: Path::new(path)
                     .file_name()
-                    .map(|n| n.to_string_lossy().to_string()),
+                    .and_then(|n| n.to_str().map(|value| value.to_string())),
             }),
             Err(e) => match e.kind() {
                 std::io::ErrorKind::NotFound => Ok(FileInfo {
@@ -113,13 +121,15 @@ impl FileSystemService for StandardFileSystemService {
 
     fn get_abs_path(&self, path: &str) -> FugaResult<String> {
         if self.is_abs_path(path) {
-            Ok(path.to_string())
-        } else {
-            let current = env::current_dir().map_err(|e| {
-                FugaError::OperationFailed(format!("Failed to get current directory: {e}"))
-            })?;
-            Ok(current.join(path).display().to_string())
+            return Self::pathbuf_to_string(Path::new(path).to_path_buf());
         }
+
+        let current = env::current_dir().map_err(|e| {
+            FugaError::OperationFailed(format!("Failed to get current directory: {e}"))
+        })?;
+
+        let joined = current.join(path);
+        Self::pathbuf_to_string(joined)
     }
 
     fn get_file_type(&self, path: &str) -> TargetType {

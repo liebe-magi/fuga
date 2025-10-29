@@ -63,5 +63,5 @@ pub trait PathService {
         target_info: &FileInfo,
         name: Option<String>,
         fs_service: &dyn FileSystemService,
-    ) -> String;
+    ) -> FugaResult<String>;
 }

@@ -41,7 +41,7 @@ impl<'a> Command for CopyCommand<'a> {
                     &file_info,
                     self.name.clone(),
                     self.fs_service,
-                );
+                )?;
 
                 let target_type = self.fs_service.get_file_type(&target);
                 println!(

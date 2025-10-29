@@ -1,4 +1,5 @@
 use crate::commands::{Command, CommandResult};
+use crate::error::FugaError;
 use crate::fuga::TargetType;
 use crate::traits::{ConfigRepository, FileSystemService, UIService};
 
@@ -36,26 +37,29 @@ impl<'a> MarkCommand<'a> {
 impl<'a> Command for MarkCommand<'a> {
     fn execute(&self) -> CommandResult {
         match &self.action {
-            MarkAction::Set(target) => match self.fs_service.get_file_type(target) {
-                TargetType::None => {
-                    println!(
-                        "❌ : {} is not found.",
-                        self.ui_service.get_colorized_text(target, true)
-                    );
-                    Ok(())
+            MarkAction::Set(target) => {
+                let info = self.fs_service.get_file_info(target)?;
+
+                if !info.exists {
+                    return Err(FugaError::FileNotFound(target.clone()));
                 }
-                _ => {
-                    let abs_path = self.fs_service.get_abs_path(target)?;
-                    self.config_repo.store_path(&abs_path)?;
-                    println!(
-                        "✅ : {} {} has marked.",
-                        self.ui_service
-                            .get_icon_for_target_type(self.fs_service.get_file_type(target)),
-                        self.ui_service.get_colorized_text(target, true)
-                    );
-                    Ok(())
-                }
-            },
+
+                let abs_path = self.fs_service.get_abs_path(target)?;
+                self.config_repo.store_path(&abs_path)?;
+
+                let target_type = if info.is_file {
+                    TargetType::File
+                } else {
+                    TargetType::Dir
+                };
+
+                println!(
+                    "✅ : {} {} has marked.",
+                    self.ui_service.get_icon_for_target_type(target_type),
+                    self.ui_service.get_colorized_text(target, true)
+                );
+                Ok(())
+            }
             MarkAction::Show => {
                 let target = self.config_repo.get_marked_path()?;
                 if target.is_empty() {
