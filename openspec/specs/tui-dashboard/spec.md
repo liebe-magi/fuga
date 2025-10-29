@@ -1,4 +1,8 @@
-## ADDED Requirements
+# tui-dashboard Specification
+
+## Purpose
+TBD - created by archiving change add-tui-dashboard. Update Purpose after archive.
+## Requirements
 ### Requirement: Launch TUI Without Arguments
 The CLI SHALL start the dashboard TUI whenever `fuga` executes without subcommand arguments, falling back to existing CLI parsing when arguments are present.
 
@@ -16,6 +20,17 @@ The dashboard TUI SHALL render a primary file browser pane, a mark list pane sou
 - **THEN** the main pane SHALL display the current working directory contents with a header showing the absolute path
 - **AND** the mark list pane SHALL list the absolute targets from configuration
 - **AND** the status bar SHALL display shortcuts such as `q`, `m`, `c`, `v`, `s`
+
+#### Scenario: Balanced pane widths
+- **WHEN** the TUI renders the file browser and mark list panes side-by-side
+- **THEN** the file browser pane SHALL consume approximately 70% of the horizontal space
+- **AND** the mark list pane SHALL consume the remaining ~30% so long paths remain readable
+
+#### Scenario: Alternate mark list styling
+- **GIVEN** the mark list contains more than one entry
+- **WHEN** the TUI renders the pane
+- **THEN** odd and even rows SHALL use contrasting background fills so adjacent items remain visually distinct even on dark terminals
+- **AND** the darker band SHALL reuse the file browser cursor colour to keep the palette consistent
 
 ### Requirement: File Browser Navigation and Filtering
 The file browser pane SHALL support cursor navigation, directory traversal, hidden file toggling, and incremental filtering triggered by `/` input.
@@ -35,6 +50,12 @@ The file browser pane SHALL support cursor navigation, directory traversal, hidd
 - **WHEN** the user presses `/`
 - **THEN** the TUI SHALL enter filtering mode
 - **AND** as the user types, the file list SHALL update incrementally using fuzzy matching semantics similar to `fzf`
+
+#### Scenario: Clear active filter
+- **GIVEN** a filter query is currently limiting the file list
+- **WHEN** the user presses `Ctrl+l`
+- **THEN** the filter input SHALL be cleared
+- **AND** the file browser SHALL revert to showing all visible entries
 
 ### Requirement: Mark Management Integration
 The TUI SHALL orchestrate existing `fuga mark` flows to add, remove, and reset marks while keeping the mark list pane in sync with configuration.
@@ -59,20 +80,19 @@ The TUI SHALL orchestrate existing `fuga mark` flows to add, remove, and reset m
 - **AND** the mark list pane SHALL display an empty state
 
 ### Requirement: Dashboard File Operations
-The TUI SHALL exit and delegate to existing copy, move, and link commands using the caller's current working directory as the destination when no explicit path is provided.
+The TUI SHALL exit and delegate to existing copy, move, and link commands using the dashboard's currently browsed directory as the implicit destination when no explicit path is provided.
 
-#### Scenario: Copy marked targets into shell directory
-- **GIVEN** the shell working directory is `/shell/dest`
-- **AND** the user is browsing a different directory in the TUI
+#### Scenario: Copy marked targets into browsed directory
+- **GIVEN** the dashboard is focused on `/tui/dest`
 - **WHEN** the user presses `c`
 - **THEN** the TUI SHALL terminate
-- **AND** it SHALL run `fuga copy` targeting `/shell/dest`
+- **AND** it SHALL run `fuga copy` targeting `/tui/dest`
 - **AND** the copy command SHALL operate on the current mark list
 
 #### Scenario: Move and link actions
 - **WHEN** the user presses `v` or `s`
 - **THEN** the TUI SHALL terminate
-- **AND** it SHALL run `fuga move` or `fuga link` respectively against the caller's working directory
+- **AND** it SHALL run `fuga move` or `fuga link` respectively using the same browsed directory path observed at exit
 - **AND** the existing CLI commands SHALL process the mark list without additional prompts
 
 ### Requirement: Dashboard Exit and Help
@@ -86,3 +106,4 @@ The TUI SHALL provide consistent exit shortcuts and an in-app help overlay enume
 - **WHEN** the user presses `?` or `F1`
 - **THEN** the TUI SHALL display a help view listing all dashboard key bindings
 - **AND** exiting the help view SHALL return to the dashboard without changing state
+

@@ -4,6 +4,7 @@ mod error;
 mod fuga;
 mod services;
 mod traits;
+mod tui;
 mod ui;
 
 use clap::{Args, CommandFactory, Parser, Subcommand, ValueHint};
@@ -21,6 +22,7 @@ use commands::{
 };
 use config::FileConfigRepository;
 use services::{StandardFileSystemService, StandardPathService};
+use tui::dashboard::{run_dashboard, DashboardExit};
 use ui::TerminalUIService;
 
 static VERSION: Lazy<String> = Lazy::new(fuga::get_version);
@@ -34,7 +36,7 @@ static VERSION: Lazy<String> = Lazy::new(fuga::get_version);
 )]
 struct Opt {
     #[command(subcommand)]
-    command: Commands,
+    command: Option<Commands>,
 }
 
 #[derive(Subcommand, Debug, PartialEq)]
@@ -117,7 +119,7 @@ fn main() {
     let services = ServiceContainer::new();
 
     let result = match opt.command {
-        Commands::Mark(mark) => {
+        Some(Commands::Mark(mark)) => {
             let action = if mark.list {
                 MarkAction::List
             } else if mark.reset {
@@ -146,7 +148,7 @@ fn main() {
 
             execute_command(command)
         }
-        Commands::Copy { destination } => {
+        Some(Commands::Copy { destination }) => {
             let command = CopyCommand::new(
                 &services.config_repo,
                 &services.fs_service,
@@ -157,7 +159,7 @@ fn main() {
 
             execute_command(command)
         }
-        Commands::Move { destination } => {
+        Some(Commands::Move { destination }) => {
             let command = MoveCommand::new(
                 &services.config_repo,
                 &services.fs_service,
@@ -168,7 +170,7 @@ fn main() {
 
             execute_command(command)
         }
-        Commands::Link { destination } => {
+        Some(Commands::Link { destination }) => {
             let command = LinkCommand::new(
                 &services.config_repo,
                 &services.fs_service,
@@ -179,15 +181,52 @@ fn main() {
 
             execute_command(command)
         }
-        Commands::Completion { shell } => {
+        Some(Commands::Completion { shell }) => {
             let cmd = Opt::command();
             let command = CompletionCommand::new(shell, cmd);
             execute_command(command)
         }
-        Commands::Version => {
+        Some(Commands::Version) => {
             println!("{}", fuga::get_version());
             Ok(())
         }
+        None => match run_dashboard(&services.config_repo, &services.fs_service) {
+            Ok(DashboardExit::Quit) => Ok(()),
+            Ok(DashboardExit::Copy(dest)) => {
+                let destination = Some(dest.to_string_lossy().into_owned());
+                let command = CopyCommand::new(
+                    &services.config_repo,
+                    &services.fs_service,
+                    &services.ui_service,
+                    &services.path_service,
+                    destination,
+                );
+                execute_command(command)
+            }
+            Ok(DashboardExit::Move(dest)) => {
+                let destination = Some(dest.to_string_lossy().into_owned());
+                let command = MoveCommand::new(
+                    &services.config_repo,
+                    &services.fs_service,
+                    &services.ui_service,
+                    &services.path_service,
+                    destination,
+                );
+                execute_command(command)
+            }
+            Ok(DashboardExit::Link(dest)) => {
+                let destination = Some(dest.to_string_lossy().into_owned());
+                let command = LinkCommand::new(
+                    &services.config_repo,
+                    &services.fs_service,
+                    &services.ui_service,
+                    &services.path_service,
+                    destination,
+                );
+                execute_command(command)
+            }
+            Err(err) => Err(err),
+        },
     };
 
     // Handle any errors that occurred during command execution
