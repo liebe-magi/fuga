@@ -1,5 +1,6 @@
 use crate::commands::{Command, CommandResult};
 use clap_complete::{generate, Generator, Shell};
+use std::io::{self, Write};
 
 /// Completion command for generating shell completion scripts
 pub struct CompletionCommand {
@@ -13,7 +14,34 @@ impl CompletionCommand {
     }
 
     fn print_completions<G: Generator>(&self, gen: G, cmd: &mut clap::Command) {
-        generate(gen, cmd, cmd.get_name().to_string(), &mut std::io::stdout());
+        #[cfg(test)]
+        {
+            let mut sink = io::sink();
+            self.write_completions(gen, cmd, &mut sink);
+        }
+
+        #[cfg(not(test))]
+        {
+            let mut stdout = io::stdout();
+            self.write_completions(gen, cmd, &mut stdout);
+        }
+    }
+
+    fn write_completions<G: Generator, W: Write>(
+        &self,
+        gen: G,
+        cmd: &mut clap::Command,
+        writer: &mut W,
+    ) {
+        generate(gen, cmd, cmd.get_name().to_string(), writer);
+    }
+
+    #[cfg(test)]
+    fn generate_completions_bytes(&self) -> Vec<u8> {
+        let mut cmd = self.cmd.clone();
+        let mut buffer = Vec::new();
+        self.write_completions(self.shell, &mut cmd, &mut buffer);
+        buffer
     }
 }
 
@@ -48,6 +76,9 @@ mod tests {
         let completion_cmd = CompletionCommand::new(Shell::Bash, cmd);
 
         // Should not panic and return Ok
+        let script = completion_cmd.generate_completions_bytes();
+        assert!(!script.is_empty());
+
         let result = completion_cmd.execute();
         assert!(result.is_ok());
     }
@@ -63,6 +94,8 @@ mod tests {
             assert_eq!(completion_cmd.shell, shell);
 
             // Should execute without error
+            let script = completion_cmd.generate_completions_bytes();
+            assert!(!script.is_empty());
             let result = completion_cmd.execute();
             assert!(result.is_ok());
         }
