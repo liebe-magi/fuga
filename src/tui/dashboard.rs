@@ -173,7 +173,7 @@ impl<'a> DashboardApp<'a> {
     }
 
     fn draw(&mut self, frame: &mut Frame<'_>) {
-        let size = frame.size();
+        let size = frame.area();
         let vertical = Layout::default()
             .direction(Direction::Vertical)
             .constraints([Constraint::Min(5), Constraint::Length(1)])
