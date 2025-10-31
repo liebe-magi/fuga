@@ -1198,6 +1198,20 @@ mod tests {
         fn current_marks(&self) -> Vec<String> {
             self.marks.borrow().clone()
         }
+
+        fn with_marks(marks: &[&str]) -> Self {
+            Self {
+                marks: RefCell::new(marks.iter().map(|value| value.to_string()).collect()),
+                presets: RefCell::default(),
+            }
+        }
+
+        fn set_preset(&self, name: &str, values: &[&str]) {
+            self.presets.borrow_mut().insert(
+                name.to_string(),
+                values.iter().map(|value| value.to_string()).collect(),
+            );
+        }
     }
 
     impl ConfigRepository for StubConfigRepository {
@@ -1402,6 +1416,53 @@ mod tests {
             .as_ref()
             .and_then(|status| status.text.strip_prefix("Removed mark"))
             .is_some());
+    }
+
+    #[test]
+    fn open_preset_loader_populates_popup() {
+        let config = StubConfigRepository::with_marks(&[]);
+        config.set_preset("logs", &["/abs/logs"]);
+        config.set_preset("template", &["/abs/template"]);
+        let fs = StubFileSystemService::default();
+        let temp_dir = tempdir().unwrap();
+        let current_dir = temp_dir.path().to_path_buf();
+        let (entry, entry_path) = make_entry(temp_dir.path(), "notes.txt");
+        fs.register_existing(entry_path);
+
+        let mut app = build_app(&config, &fs, current_dir, entry);
+        app.open_preset_loader().expect("loader should open");
+
+        let popup = app.preset_ui.as_ref().expect("preset popup visible");
+        assert_eq!(
+            popup.items,
+            vec!["logs".to_string(), "template".to_string()]
+        );
+        assert_eq!(popup.visible_indices.len(), 2);
+        assert_eq!(popup.selection, 0);
+    }
+
+    #[test]
+    fn preset_loader_enter_loads_selected_preset() {
+        let config = StubConfigRepository::with_marks(&[]);
+        config.set_preset("template", &["/abs/template"]);
+        let fs = StubFileSystemService::default();
+        let temp_dir = tempdir().unwrap();
+        let current_dir = temp_dir.path().to_path_buf();
+        let (entry, entry_path) = make_entry(temp_dir.path(), "notes.txt");
+        fs.register_existing(entry_path);
+
+        let mut app = build_app(&config, &fs, current_dir, entry);
+        app.open_preset_loader().expect("loader should open");
+
+        let enter = KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE);
+        app.handle_preset_key(&enter)
+            .expect("preset handler should succeed");
+
+        assert!(app.preset_ui.is_none(), "popup should close after load");
+        assert_eq!(config.current_marks(), vec!["/abs/template".to_string()]);
+        let status = app.status.as_ref().expect("status message");
+        assert!(status.text.contains("Loaded preset"));
+        assert!(!status.is_error);
     }
 
     #[test]
