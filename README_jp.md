@@ -13,6 +13,7 @@ A CLI tool to operate files or directories in 2 steps.
 - `fuga`はファイル操作を2ステップで行うCLIツールです。
 - `mv`,`cp`,`ln`コマンドなどの代替コマンドとして開発しました。
 - `fuga mark`で操作対象のファイルやディレクトリを複数マーキングし、別ディレクトリに移動してからまとめてコピー/移動/リンクできます。
+- よく使うマークリストはプリセットとして保存し、CLIやダッシュボードからいつでも再読み込みできます。
 - 引数なしで`fuga`を起動すると対話的なダッシュボードTUIが立ち上がり、ディレクトリ移動やマーキング、コピー/移動/リンク操作をターミナル内で完結できます。
 
 ## 📦 INSTALLATION
@@ -41,7 +42,7 @@ cargo install fuga
 
 ```
 $ fuga -V
-fuga v1.0.0
+fuga v1.1.0
 ```
 
 ## 📦 USAGE
@@ -59,6 +60,7 @@ Commands:
   move        Move the marked targets
   link        Make symbolic links to the marked targets
   completion  Generate the completion script
+  preset      Manage mark presets
   version     Show the version of the tool
   help        Print this message or the help of the given subcommand(s)
 
@@ -73,6 +75,7 @@ Options:
 - `.`や`Ctrl+h`で隠しファイルの表示を切り替え、`/`を押してファジー検索で絞り込みできます。
 - カーソル移動は矢印キーや`j`/`k`、ディレクトリの開閉は`Enter`/`l`、親ディレクトリへ戻るには`h`または`Backspace`を利用できます。
 - `m`またはスペースでマークのオン/オフ、`Ctrl+r`または`R`でマーク一覧をリセット、`?`で操作方法のヘルプを確認できます。
+- `P`でプリセット読み込みポップアップを開き、`S`で現在のマークをプリセットとして保存、ポップアップ内で`D`または`x`を押すとハイライト中のプリセットを削除できます。
 - `c`/`v`/`s`でそれぞれコピー/移動/シンボリックリンクを現在ブラウズ中のディレクトリに対して実行し、`q`で変更なしに終了します。
 
 ### マーク対象の管理
@@ -113,6 +116,24 @@ $ fuga mark --reset
 ✅ : Marked targets cleared.
 ℹ️  : Mark list now tracks 0 target(s).
 ```
+
+### プリセット管理
+
+- 現在のマーク一覧をプリセットとして保存するには`fuga preset save <NAME>`を使用します。
+
+```
+$ fuga preset save photos
+✅ : Preset 'photos' saved with 3 target(s).
+```
+
+- 保存したプリセットをマーク一覧に再読み込みするには`fuga preset load <NAME>`を使用します。
+
+```
+$ fuga preset load photos
+✅ : Preset 'photos' loaded. Mark list now tracks 3 target(s).
+```
+
+- 登録済みのプリセット一覧は`fuga preset list`で確認でき、`fuga preset show <NAME>`で内容を表示、`fuga preset delete <NAME>`で不要なプリセットを削除できます。
 
 ### ファイル操作
 

@@ -17,6 +17,7 @@ A CLI tool to operate files or directories in 2 steps.
 - `fuga` is a CLI tool that performs file operations in two steps.
 - Developed as an alternative to commands like `mv`, `cp`, and `ln`.
 - Mark one or more files or directories using `fuga mark`, and then perform copy/move/link operations together after navigating to another directory.
+- Save frequently used mark sets as presets and reload them later from the CLI or dashboard.
 - Launching `fuga` without arguments opens an interactive dashboard TUI so you can browse, mark, and run copy/move/link actions without leaving the terminal.
 
 ## 📦 INSTALLATION
@@ -45,7 +46,7 @@ cargo install fuga
 
 ```
 $ fuga -V
-fuga v1.0.0
+fuga v1.1.0
 ```
 
 ## 📦 USAGE
@@ -63,6 +64,7 @@ Commands:
   move        Move the marked targets
   link        Make symbolic links to the marked targets
   completion  Generate the completion script
+  preset      Manage mark presets
   version     Show the version of the tool
   help        Print this message or the help of the given subcommand(s)
 
@@ -77,6 +79,7 @@ Options:
 - Browse the current directory, toggle hidden files with `.` or `Ctrl+h`, and filter entries with `/` plus fuzzy queries.
 - Move the cursor with arrow keys or `j`/`k`, open directories with `Enter`/`l`, and return to the parent with `h` or `Backspace`.
 - Press `m` or space to toggle marks, `Ctrl+r`/`R` to clear the mark list, and `?` to view the in-app help overlay.
+- Open the preset loader with `P`, save the current marks with `S`, and delete presets from the popup with `D` or `x`.
 - Exit with `c`, `v`, or `s` to copy, move, or link the marked targets into the directory you were browsing, or `q` to leave without changes.
 
 ### Managing Marked Targets
@@ -117,6 +120,24 @@ $ fuga mark --reset
 ✅ : Marked targets cleared.
 ℹ️  : Mark list now tracks 0 target(s).
 ```
+
+### Managing Presets
+
+- Save the current mark list as a preset with `fuga preset save <NAME>`.
+
+```
+$ fuga preset save photos
+✅ : Preset 'photos' saved with 3 target(s).
+```
+
+- Load the targets from a preset back into the mark list with `fuga preset load <NAME>`.
+
+```
+$ fuga preset load photos
+✅ : Preset 'photos' loaded. Mark list now tracks 3 target(s).
+```
+
+- Review stored presets with `fuga preset list`, inspect their contents via `fuga preset show <NAME>`, and remove obsolete entries with `fuga preset delete <NAME>`.
 
 ### File Operations
 
