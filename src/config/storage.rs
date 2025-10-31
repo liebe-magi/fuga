@@ -93,4 +93,32 @@ impl ConfigRepository for FileConfigRepository {
     fn reset_marks(&self) -> FugaResult<()> {
         self.set_marked_targets(&[])
     }
+
+    fn list_presets(&self) -> FugaResult<Vec<String>> {
+        let config = self.load_config()?;
+        Ok(config.data.presets.keys().cloned().collect())
+    }
+
+    fn get_preset(&self, name: &str) -> FugaResult<Option<Vec<String>>> {
+        let config = self.load_config()?;
+        Ok(config.data.presets.get(name).cloned())
+    }
+
+    fn save_preset(&self, name: &str, targets: &[String]) -> FugaResult<()> {
+        let mut config = self.load_config()?;
+        config
+            .data
+            .presets
+            .insert(name.to_string(), targets.to_vec());
+        self.store_config(&config)
+    }
+
+    fn delete_preset(&self, name: &str) -> FugaResult<bool> {
+        let mut config = self.load_config()?;
+        let existed = config.data.presets.remove(name).is_some();
+        if existed {
+            self.store_config(&config)?;
+        }
+        Ok(existed)
+    }
 }

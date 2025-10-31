@@ -3,6 +3,7 @@ pub mod copy;
 pub mod link;
 pub mod mark;
 pub mod r#move;
+pub mod preset;
 
 use crate::error::FugaResult;
 

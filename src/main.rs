@@ -17,6 +17,7 @@ use commands::{
     copy::CopyCommand,
     link::LinkCommand,
     mark::{MarkAction, MarkCommand},
+    preset::{PresetAction, PresetCommand},
     r#move::MoveCommand,
     Command as FugaCommand,
 };
@@ -69,6 +70,11 @@ enum Commands {
     },
     /// Show the version of the tool
     Version,
+    /// Manage mark presets
+    Preset {
+        #[command(subcommand)]
+        command: PresetSubcommands,
+    },
 }
 
 #[derive(Args, Debug, PartialEq)]
@@ -88,6 +94,36 @@ struct Mark {
     /// Reset the mark list
     #[arg(long = "reset", conflicts_with = "list")]
     reset: bool,
+}
+
+#[derive(Subcommand, Debug, PartialEq)]
+enum PresetSubcommands {
+    /// Save the current mark list to the named preset
+    Save {
+        /// Preset name to create or overwrite
+        #[arg(value_name = "NAME")]
+        name: String,
+    },
+    /// Load the named preset into the mark list
+    Load {
+        /// Preset name to load
+        #[arg(value_name = "NAME")]
+        name: String,
+    },
+    /// List available presets
+    List,
+    /// Show the contents of a preset
+    Show {
+        /// Preset name to display
+        #[arg(value_name = "NAME")]
+        name: String,
+    },
+    /// Delete a preset
+    Delete {
+        /// Preset name to delete
+        #[arg(value_name = "NAME")]
+        name: String,
+    },
 }
 
 /// Initialize all services for dependency injection
@@ -184,6 +220,24 @@ fn main() {
         Some(Commands::Completion { shell }) => {
             let cmd = Opt::command();
             let command = CompletionCommand::new(shell, cmd);
+            execute_command(command)
+        }
+        Some(Commands::Preset {
+            command: subcommand,
+        }) => {
+            let action = match subcommand {
+                PresetSubcommands::Save { name } => PresetAction::Save { name },
+                PresetSubcommands::Load { name } => PresetAction::Load { name },
+                PresetSubcommands::List => PresetAction::List,
+                PresetSubcommands::Show { name } => PresetAction::Show { name },
+                PresetSubcommands::Delete { name } => PresetAction::Delete { name },
+            };
+            let command = PresetCommand::new(
+                &services.config_repo,
+                &services.fs_service,
+                &services.ui_service,
+                action,
+            );
             execute_command(command)
         }
         Some(Commands::Version) => {

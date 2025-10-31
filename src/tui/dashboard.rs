@@ -14,11 +14,12 @@ use ratatui::widgets::{Block, Borders, Clear, List, ListItem, ListState, Paragra
 use ratatui::{Frame, Terminal};
 
 use crate::config::FileConfigRepository;
-use crate::error::FugaResult;
+use crate::error::{FugaError, FugaResult};
 use crate::services::StandardFileSystemService;
 use crate::traits::{ConfigRepository, FileSystemService};
 
-const HELP_TEXT: &str = "Key Bindings\n\n  q / Ctrl+c    Quit dashboard\n  m / Space     Toggle mark on selection\n  c             Exit and run copy\n  v             Exit and run move\n  s             Exit and run link\n  Arrow keys    Navigate file list\n  j / k         Navigate file list\n  h / Backspace Go to parent directory\n  l / Enter     Enter selected directory\n  . / Ctrl+h    Toggle hidden files\n  /             Start incremental filter\n  Ctrl+l        Clear active filter\n  Ctrl+r / R    Reset mark list (with confirm)\n  ? / F1        Toggle this help";
+const HELP_TEXT: &str = "Key Bindings\n\n  q / Ctrl+c    Quit dashboard\n  m / Space     Toggle mark on selection\n  c             Exit and run copy\n  v             Exit and run move\n  s             Exit and run link\n  P             Open preset loader\n  S             Open preset saver\n  D / x         Delete highlighted preset (in preset popup)\n  Arrow keys    Navigate file list\n  j / k         Navigate file list\n  h / Backspace Go to parent directory\n  l / Enter     Enter selected directory\n  . / Ctrl+h    Toggle hidden files\n  /             Start incremental filter\n  Ctrl+l        Clear active filter\n  Ctrl+r / R    Reset mark list (with confirm)\n  ? / F1        Toggle this help";
+const CREATE_NEW_LABEL: &str = "[ Create New Preset... ]";
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum DashboardExit {
@@ -60,8 +61,129 @@ struct StatusMessage {
     is_error: bool,
 }
 
+#[derive(Clone)]
 enum Confirmation {
     ResetMarks,
+    PresetOverwrite { name: String },
+    PresetDelete { name: String },
+}
+
+#[derive(Clone, Copy)]
+enum PresetUiMode {
+    Load,
+    Save,
+}
+
+struct PresetUiState {
+    mode: PresetUiMode,
+    items: Vec<String>,
+    visible_indices: Vec<usize>,
+    list_state: ListState,
+    selection: usize,
+    filter_input: String,
+    filter_mode: bool,
+}
+
+impl PresetUiState {
+    fn new(mode: PresetUiMode, items: Vec<String>) -> Self {
+        let mut list_state = ListState::default();
+        list_state.select(Some(0));
+        Self {
+            mode,
+            items,
+            visible_indices: Vec::new(),
+            list_state,
+            selection: 0,
+            filter_input: String::new(),
+            filter_mode: false,
+        }
+    }
+
+    fn rebuild_visible(&mut self) {
+        self.visible_indices.clear();
+
+        if matches!(self.mode, PresetUiMode::Save) {
+            // Always include the create-new sentinel at the top
+            if !self.items.is_empty() {
+                self.visible_indices.push(0);
+            }
+        }
+
+        for (idx, item) in self.items.iter().enumerate() {
+            if matches!(self.mode, PresetUiMode::Save) && idx == 0 {
+                continue;
+            }
+
+            if self.filter_input.is_empty() || fuzzy_match(item, &self.filter_input) {
+                self.visible_indices.push(idx);
+            }
+        }
+
+        if self.visible_indices.is_empty() {
+            self.selection = 0;
+            self.list_state.select(None);
+        } else {
+            if self.selection >= self.visible_indices.len() {
+                self.selection = self.visible_indices.len() - 1;
+            }
+            self.list_state.select(Some(self.selection));
+        }
+    }
+
+    fn move_selection(&mut self, delta: isize) {
+        if self.visible_indices.is_empty() {
+            self.list_state.select(None);
+            return;
+        }
+        let len = self.visible_indices.len() as isize;
+        let mut new_sel = self.selection as isize + delta;
+        if new_sel < 0 {
+            new_sel = 0;
+        } else if new_sel >= len {
+            new_sel = len - 1;
+        }
+        self.selection = new_sel as usize;
+        self.list_state.select(Some(self.selection));
+    }
+
+    fn selected_item(&self) -> Option<&str> {
+        self.visible_indices
+            .get(self.selection)
+            .and_then(|idx| self.items.get(*idx))
+            .map(|value| value.as_str())
+    }
+
+    fn filter_instruction(&self) -> String {
+        if self.filter_mode {
+            format!("Search: {}_", self.filter_input)
+        } else if self.filter_input.is_empty() {
+            "Press '/' to search".to_string()
+        } else {
+            format!("Search: {}", self.filter_input)
+        }
+    }
+
+    fn is_create_new(&self, item: &str) -> bool {
+        matches!(self.mode, PresetUiMode::Save) && item == CREATE_NEW_LABEL
+    }
+}
+
+enum InputPromptKind {
+    NewPreset,
+}
+
+struct InputPromptState {
+    kind: InputPromptKind,
+    buffer: String,
+}
+
+impl InputPromptState {
+    fn new(kind: InputPromptKind) -> Self {
+        Self {
+            kind,
+            buffer: String::new(),
+        }
+    }
 }
 
 struct DashboardApp<'a> {
@@ -79,6 +201,8 @@ struct DashboardApp<'a> {
     status: Option<StatusMessage>,
     confirmation: Option<Confirmation>,
     help_open: bool,
+    preset_ui: Option<PresetUiState>,
+    input_prompt: Option<InputPromptState>,
 }
 
 impl<'a> DashboardApp<'a> {
@@ -102,6 +226,8 @@ impl<'a> DashboardApp<'a> {
             status: None,
             confirmation: None,
             help_open: false,
+            preset_ui: None,
+            input_prompt: None,
         };
         app.refresh_marks()?;
         app.reload_directory()?;
@@ -228,6 +354,64 @@ impl<'a> DashboardApp<'a> {
         let status_line = self.status_line();
         frame.render_widget(status_line, vertical[1]);
 
+        if let Some(popup) = self.preset_ui.as_mut() {
+            let area = centered_rect(60, 60, size);
+            frame.render_widget(Clear, area);
+
+            let title = match popup.mode {
+                PresetUiMode::Load => "Preset Loader",
+                PresetUiMode::Save => "Preset Saver",
+            };
+
+            let segments = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints([Constraint::Min(3), Constraint::Length(3)])
+                .split(area);
+
+            let items: Vec<ListItem<'static>> = popup
+                .visible_indices
+                .iter()
+                .filter_map(|idx| popup.items.get(*idx))
+                .map(|label| {
+                    let base = label.clone();
+                    let style = if popup.is_create_new(label) {
+                        Style::default().fg(Color::Yellow)
+                    } else {
+                        Style::default()
+                    };
+                    ListItem::new(base).style(style)
+                })
+                .collect();
+
+            frame.render_stateful_widget(
+                List::new(items)
+                    .block(Block::default().title(title).borders(Borders::ALL))
+                    .highlight_style(Style::default().bg(Color::Blue).fg(Color::Black)),
+                segments[0],
+                &mut popup.list_state,
+            );
+
+            let filter_text = popup.filter_instruction();
+            frame.render_widget(
+                Paragraph::new(filter_text)
+                    .block(Block::default().title("Search").borders(Borders::ALL)),
+                segments[1],
+            );
+        }
+
+        if let Some(prompt) = self.input_prompt.as_ref() {
+            let area = centered_rect(60, 25, size);
+            frame.render_widget(Clear, area);
+            let label = match prompt.kind {
+                InputPromptKind::NewPreset => "Create New Preset",
+            };
+            let text = format!("New preset name: {}_", prompt.buffer);
+            frame.render_widget(
+                Paragraph::new(text).block(Block::default().title(label).borders(Borders::ALL)),
+                area,
+            );
+        }
+
         if self.help_open {
             let area = centered_rect(70, 70, size);
             frame.render_widget(Clear, area);
@@ -265,10 +449,33 @@ impl<'a> DashboardApp<'a> {
     fn status_line(&self) -> Paragraph<'_> {
         let base = if self.filter_mode {
             format!("Filter: {}_", self.filter_input)
-        } else if matches!(self.confirmation, Some(Confirmation::ResetMarks)) {
-            "Reset marks? [y/N]".to_string()
+        } else if let Some(prompt) = self.input_prompt.as_ref() {
+            match prompt.kind {
+                InputPromptKind::NewPreset => {
+                    format!("New preset name: {}_", prompt.buffer)
+                }
+            }
+        } else if let Some(confirmation) = &self.confirmation {
+            match confirmation {
+                Confirmation::ResetMarks => "Reset marks? [y/N]".to_string(),
+                Confirmation::PresetOverwrite { name } => {
+                    format!("Preset '{}' already exists. Overwrite? [y/N]", name)
+                }
+                Confirmation::PresetDelete { name } => {
+                    format!("Delete preset '{}' ? [y/N]", name)
+                }
+            }
+        } else if let Some(popup) = &self.preset_ui {
+            match popup.mode {
+                PresetUiMode::Load =>
+                    "Preset loader: [j]/[k] move  [Enter] load  [/] search  [D]/[x] delete  [Esc] cancel"
+                        .to_string(),
+                PresetUiMode::Save =>
+                    "Preset saver: [j]/[k] move  [Enter] select  [/] search  [D]/[x] delete  [Esc] cancel"
+                        .to_string(),
+            }
         } else {
-            "[q] quit  [m]/[space] mark  [c] copy  [v] move  [s] link  [/] filter  [Ctrl+l] clear filter  [.] hidden  [?] help"
+            "[q] quit  [m]/[space] mark  [c] copy  [v] move  [s] link  [P] presets  [S] save preset  [/] filter  [Ctrl+l] clear filter  [.] hidden  [?] help"
                 .to_string()
         };
 
@@ -316,22 +523,17 @@ impl<'a> DashboardApp<'a> {
             return Ok(None);
         }
 
-        if let Some(Confirmation::ResetMarks) = self.confirmation {
-            match key.code {
-                KeyCode::Char('y') | KeyCode::Char('Y') => {
-                    self.execute_reset_marks()?;
-                    self.confirmation = None;
-                }
-                KeyCode::Esc | KeyCode::Char('n') | KeyCode::Char('N') => {
-                    self.status = Some(StatusMessage {
-                        text: "Reset cancelled".to_string(),
-                        is_error: false,
-                    });
-                    self.confirmation = None;
-                }
-                _ => {}
-            }
+        if self.input_prompt.is_some() {
+            self.handle_input_prompt_key(&key)?;
             return Ok(None);
+        }
+
+        if let Some(result) = self.handle_confirmation_key(&key)? {
+            return Ok(Some(result));
+        }
+
+        if self.preset_ui.is_some() {
+            return self.handle_preset_key(&key);
         }
 
         if self.filter_mode {
@@ -383,6 +585,12 @@ impl<'a> DashboardApp<'a> {
             KeyCode::Char('c') => return Ok(Some(DashboardExit::Copy(self.current_dir.clone()))),
             KeyCode::Char('v') => return Ok(Some(DashboardExit::Move(self.current_dir.clone()))),
             KeyCode::Char('s') => return Ok(Some(DashboardExit::Link(self.current_dir.clone()))),
+            KeyCode::Char('P') => {
+                self.open_preset_loader()?;
+            }
+            KeyCode::Char('S') => {
+                self.open_preset_saver()?;
+            }
             KeyCode::Char('?') | KeyCode::F(1) => {
                 self.help_open = true;
             }
@@ -573,6 +781,328 @@ impl<'a> DashboardApp<'a> {
         });
         Ok(())
     }
+
+    fn open_preset_loader(&mut self) -> FugaResult<()> {
+        let items = self.config_repo.list_presets()?;
+        let mut popup = PresetUiState::new(PresetUiMode::Load, items);
+        popup.rebuild_visible();
+        self.preset_ui = Some(popup);
+        self.status = None;
+        Ok(())
+    }
+
+    fn open_preset_saver(&mut self) -> FugaResult<()> {
+        let mut items = self.config_repo.list_presets()?;
+        items.insert(0, CREATE_NEW_LABEL.to_string());
+        let mut popup = PresetUiState::new(PresetUiMode::Save, items);
+        popup.rebuild_visible();
+        self.preset_ui = Some(popup);
+        self.status = None;
+        Ok(())
+    }
+
+    fn close_preset_ui(&mut self) {
+        self.preset_ui = None;
+        self.confirmation = None;
+        self.input_prompt = None;
+    }
+
+    fn reload_preset_items(&mut self) -> FugaResult<()> {
+        if let Some(popup) = self.preset_ui.as_mut() {
+            let previous = popup.selected_item().map(|s| s.to_string());
+            let mut items = self.config_repo.list_presets()?;
+            if matches!(popup.mode, PresetUiMode::Save) {
+                items.insert(0, CREATE_NEW_LABEL.to_string());
+            }
+            popup.items = items;
+            popup.rebuild_visible();
+
+            if let Some(prev) = previous {
+                if let Some(idx) = popup.items.iter().position(|item| item == &prev) {
+                    if let Some(pos) = popup.visible_indices.iter().position(|value| *value == idx)
+                    {
+                        popup.selection = pos;
+                        popup.list_state.select(Some(popup.selection));
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
+
+    fn select_preset(&mut self, name: &str) {
+        if let Some(popup) = self.preset_ui.as_mut() {
+            if let Some(idx) = popup.items.iter().position(|item| item == name) {
+                if let Some(pos) = popup.visible_indices.iter().position(|value| *value == idx) {
+                    popup.selection = pos;
+                    popup.list_state.select(Some(pos));
+                }
+            }
+        }
+    }
+
+    fn handle_preset_key(&mut self, key: &KeyEvent) -> FugaResult<Option<DashboardExit>> {
+        let Some(popup) = self.preset_ui.as_mut() else {
+            return Ok(None);
+        };
+
+        if popup.filter_mode {
+            match key.code {
+                KeyCode::Esc => {
+                    popup.filter_mode = false;
+                    popup.filter_input.clear();
+                    popup.rebuild_visible();
+                }
+                KeyCode::Enter => {
+                    popup.filter_mode = false;
+                }
+                KeyCode::Backspace => {
+                    popup.filter_input.pop();
+                    popup.rebuild_visible();
+                }
+                KeyCode::Char(ch) => {
+                    if !key.modifiers.contains(KeyModifiers::CONTROL) {
+                        popup.filter_input.push(ch);
+                        popup.rebuild_visible();
+                    }
+                }
+                _ => {}
+            }
+            return Ok(None);
+        }
+
+        match key.code {
+            KeyCode::Char('/') => {
+                popup.filter_mode = true;
+                popup.filter_input.clear();
+            }
+            KeyCode::Char('j') | KeyCode::Down => popup.move_selection(1),
+            KeyCode::Char('k') | KeyCode::Up => popup.move_selection(-1),
+            KeyCode::Esc => {
+                self.close_preset_ui();
+            }
+            KeyCode::Enter => {
+                if let Some(item) = popup.selected_item().map(|s| s.to_string()) {
+                    match popup.mode {
+                        PresetUiMode::Load => self.trigger_preset_load(&item)?,
+                        PresetUiMode::Save => {
+                            if popup.is_create_new(&item) {
+                                self.input_prompt =
+                                    Some(InputPromptState::new(InputPromptKind::NewPreset));
+                            } else {
+                                self.confirmation =
+                                    Some(Confirmation::PresetOverwrite { name: item });
+                            }
+                        }
+                    }
+                }
+            }
+            KeyCode::Char('D') | KeyCode::Char('x') => {
+                if let Some(item) = popup.selected_item().map(|s| s.to_string()) {
+                    if !popup.is_create_new(&item) {
+                        self.confirmation = Some(Confirmation::PresetDelete { name: item });
+                    }
+                }
+            }
+            _ => {}
+        }
+
+        Ok(None)
+    }
+
+    fn trigger_preset_load(&mut self, name: &str) -> FugaResult<()> {
+        match self.load_preset_by_name(name) {
+            Ok(count) => {
+                self.close_preset_ui();
+                self.status = Some(StatusMessage {
+                    text: format!("Loaded preset '{}' ({} target(s))", name, count),
+                    is_error: false,
+                });
+            }
+            Err(err) => {
+                self.status = Some(StatusMessage {
+                    text: err.to_string(),
+                    is_error: true,
+                });
+            }
+        }
+        Ok(())
+    }
+
+    fn load_preset_by_name(&mut self, name: &str) -> FugaResult<usize> {
+        let preset = self
+            .config_repo
+            .get_preset(name)?
+            .ok_or_else(|| FugaError::OperationFailed(format!("Preset '{}' not found.", name)))?;
+        self.config_repo.set_marked_targets(&preset)?;
+        self.refresh_marks()?;
+        Ok(preset.len())
+    }
+
+    fn save_current_marks_to_preset(&mut self, name: &str) -> FugaResult<usize> {
+        self.refresh_marks()?;
+        self.config_repo.save_preset(name, &self.marks)?;
+        self.reload_preset_items()?;
+        self.select_preset(name);
+        Ok(self.marks.len())
+    }
+
+    fn delete_preset_by_name(&mut self, name: &str) -> FugaResult<bool> {
+        let deleted = self.config_repo.delete_preset(name)?;
+        if deleted {
+            self.reload_preset_items()?;
+        }
+        Ok(deleted)
+    }
+
+    fn handle_input_prompt_key(&mut self, key: &KeyEvent) -> FugaResult<()> {
+        let Some(prompt) = self.input_prompt.as_mut() else {
+            return Ok(());
+        };
+
+        match key.code {
+            KeyCode::Esc => {
+                self.input_prompt = None;
+            }
+            KeyCode::Enter => {
+                let name = prompt.buffer.trim().to_string();
+                if name.is_empty() {
+                    self.status = Some(StatusMessage {
+                        text: "Preset name cannot be empty.".to_string(),
+                        is_error: true,
+                    });
+                    return Ok(());
+                }
+
+                match prompt.kind {
+                    InputPromptKind::NewPreset => match self.save_current_marks_to_preset(&name) {
+                        Ok(count) => {
+                            self.status = Some(StatusMessage {
+                                text: format!("Preset '{}' saved with {} target(s).", name, count),
+                                is_error: false,
+                            });
+                            self.input_prompt = None;
+                        }
+                        Err(err) => {
+                            self.status = Some(StatusMessage {
+                                text: err.to_string(),
+                                is_error: true,
+                            });
+                        }
+                    },
+                }
+            }
+            KeyCode::Backspace => {
+                prompt.buffer.pop();
+            }
+            KeyCode::Char(ch) => {
+                if !key.modifiers.contains(KeyModifiers::CONTROL) {
+                    prompt.buffer.push(ch);
+                }
+            }
+            _ => {}
+        }
+
+        Ok(())
+    }
+
+    fn handle_confirmation_key(&mut self, key: &KeyEvent) -> FugaResult<Option<DashboardExit>> {
+        let Some(current) = self.confirmation.clone() else {
+            return Ok(None);
+        };
+
+        match current {
+            Confirmation::ResetMarks => {
+                match key.code {
+                    KeyCode::Char('y') | KeyCode::Char('Y') => {
+                        self.execute_reset_marks()?;
+                        self.confirmation = None;
+                    }
+                    KeyCode::Esc | KeyCode::Char('n') | KeyCode::Char('N') => {
+                        self.status = Some(StatusMessage {
+                            text: "Reset cancelled".to_string(),
+                            is_error: false,
+                        });
+                        self.confirmation = None;
+                    }
+                    _ => {}
+                }
+                Ok(None)
+            }
+            Confirmation::PresetOverwrite { name } => {
+                match key.code {
+                    KeyCode::Char('y') | KeyCode::Char('Y') => {
+                        match self.save_current_marks_to_preset(&name) {
+                            Ok(count) => {
+                                self.status = Some(StatusMessage {
+                                    text: format!(
+                                        "Preset '{}' overwritten with {} target(s).",
+                                        name, count
+                                    ),
+                                    is_error: false,
+                                });
+                                self.confirmation = None;
+                            }
+                            Err(err) => {
+                                self.status = Some(StatusMessage {
+                                    text: err.to_string(),
+                                    is_error: true,
+                                });
+                                self.confirmation = None;
+                            }
+                        }
+                    }
+                    KeyCode::Esc | KeyCode::Char('n') | KeyCode::Char('N') => {
+                        self.status = Some(StatusMessage {
+                            text: format!("Overwrite of '{}' cancelled", name),
+                            is_error: false,
+                        });
+                        self.confirmation = None;
+                    }
+                    _ => {}
+                }
+                Ok(None)
+            }
+            Confirmation::PresetDelete { name } => {
+                match key.code {
+                    KeyCode::Char('y') | KeyCode::Char('Y') => {
+                        match self.delete_preset_by_name(&name) {
+                            Ok(true) => {
+                                self.status = Some(StatusMessage {
+                                    text: format!("Preset '{}' deleted", name),
+                                    is_error: false,
+                                });
+                                self.confirmation = None;
+                            }
+                            Ok(false) => {
+                                self.status = Some(StatusMessage {
+                                    text: format!("Preset '{}' not found", name),
+                                    is_error: true,
+                                });
+                                self.confirmation = None;
+                            }
+                            Err(err) => {
+                                self.status = Some(StatusMessage {
+                                    text: err.to_string(),
+                                    is_error: true,
+                                });
+                                self.confirmation = None;
+                            }
+                        }
+                    }
+                    KeyCode::Esc | KeyCode::Char('n') | KeyCode::Char('N') => {
+                        self.status = Some(StatusMessage {
+                            text: format!("Delete of '{}' cancelled", name),
+                            is_error: false,
+                        });
+                        self.confirmation = None;
+                    }
+                    _ => {}
+                }
+                Ok(None)
+            }
+        }
+    }
 }
 
 pub fn run_dashboard(
@@ -661,6 +1191,7 @@ mod tests {
     #[derive(Default)]
     struct StubConfigRepository {
         marks: RefCell<Vec<String>>,
+        presets: RefCell<std::collections::BTreeMap<String, Vec<String>>>,
     }
 
     impl StubConfigRepository {
@@ -690,6 +1221,25 @@ mod tests {
         fn reset_marks(&self) -> FugaResult<()> {
             self.marks.borrow_mut().clear();
             Ok(())
+        }
+
+        fn list_presets(&self) -> FugaResult<Vec<String>> {
+            Ok(self.presets.borrow().keys().cloned().collect())
+        }
+
+        fn get_preset(&self, name: &str) -> FugaResult<Option<Vec<String>>> {
+            Ok(self.presets.borrow().get(name).cloned())
+        }
+
+        fn save_preset(&self, name: &str, targets: &[String]) -> FugaResult<()> {
+            self.presets
+                .borrow_mut()
+                .insert(name.to_string(), targets.to_vec());
+            Ok(())
+        }
+
+        fn delete_preset(&self, name: &str) -> FugaResult<bool> {
+            Ok(self.presets.borrow_mut().remove(name).is_some())
         }
     }
 
@@ -774,6 +1324,8 @@ mod tests {
             status: None,
             confirmation: None,
             help_open: false,
+            preset_ui: None,
+            input_prompt: None,
         }
     }
 

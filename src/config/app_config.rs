@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 
 #[derive(Default, Serialize, Deserialize, Debug)]
 pub struct AppConfig {
@@ -20,4 +21,7 @@ pub struct Data {
 
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
+
+    #[serde(default)]
+    pub presets: BTreeMap<String, Vec<String>>,
 }

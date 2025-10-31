@@ -19,6 +19,18 @@ pub trait ConfigRepository {
 
     /// Reset the marked targets to an empty list
     fn reset_marks(&self) -> FugaResult<()>;
+
+    /// Retrieve all saved preset names in stable order
+    fn list_presets(&self) -> FugaResult<Vec<String>>;
+
+    /// Retrieve the targets stored under the given preset name
+    fn get_preset(&self, name: &str) -> FugaResult<Option<Vec<String>>>;
+
+    /// Persist or overwrite the given preset name with provided targets
+    fn save_preset(&self, name: &str, targets: &[String]) -> FugaResult<()>;
+
+    /// Delete the preset with the given name, returning whether it existed
+    fn delete_preset(&self, name: &str) -> FugaResult<bool>;
 }
 
 /// Trait for file system operations
