@@ -500,7 +500,7 @@ checksum = "42703706b716c37f96a77aea830392ad231f44c9e9a67872fa5548707e11b11c"
 
 [[package]]
 name = "fuga"
-version = "1.0.0"
+version = "1.1.0"
 dependencies = [
  "assert_cmd",
  "assert_fs",
