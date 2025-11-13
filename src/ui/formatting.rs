@@ -70,11 +70,16 @@ mod tests {
 
     #[test]
     fn emoji_icons_toggle_via_env() {
-        std::env::set_var("FUGA_DISABLE_EMOJI", "1");
+        // SAFETY: Tests run single-threaded in this crate and reset the variable immediately after use.
+        unsafe {
+            std::env::set_var("FUGA_DISABLE_EMOJI", "1");
+        }
         let ui = TerminalUIService::new();
         assert_eq!(ui.get_icon_for_target_type(TargetType::File), "[FILE]");
         assert_eq!(ui.get_icon_information().trim(), "[i]");
-        std::env::remove_var("FUGA_DISABLE_EMOJI");
+        unsafe {
+            std::env::remove_var("FUGA_DISABLE_EMOJI");
+        }
 
         let ui = TerminalUIService::new();
         assert_eq!(ui.get_icon_for_target_type(TargetType::File), "📄");

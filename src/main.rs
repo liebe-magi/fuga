@@ -13,17 +13,17 @@ use once_cell::sync::Lazy;
 
 // Import new architecture components
 use commands::{
+    Command as FugaCommand,
     completion::CompletionCommand,
     copy::CopyCommand,
     link::LinkCommand,
     mark::{MarkAction, MarkCommand},
-    preset::{PresetAction, PresetCommand},
     r#move::MoveCommand,
-    Command as FugaCommand,
+    preset::{PresetAction, PresetCommand},
 };
 use config::FileConfigRepository;
 use services::{StandardFileSystemService, StandardPathService};
-use tui::dashboard::{run_dashboard, DashboardExit};
+use tui::dashboard::{DashboardExit, run_dashboard};
 use ui::TerminalUIService;
 
 static VERSION: Lazy<String> = Lazy::new(fuga::get_version);

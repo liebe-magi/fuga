@@ -1,5 +1,5 @@
 use crate::commands::{Command, CommandResult};
-use clap_complete::{generate, Generator, Shell};
+use clap_complete::{Generator, Shell, generate};
 use std::io::{self, Write};
 
 /// Completion command for generating shell completion scripts
@@ -13,27 +13,27 @@ impl CompletionCommand {
         Self { shell, cmd }
     }
 
-    fn print_completions<G: Generator>(&self, gen: G, cmd: &mut clap::Command) {
+    fn print_completions<G: Generator>(&self, generator: G, cmd: &mut clap::Command) {
         #[cfg(test)]
         {
             let mut sink = io::sink();
-            self.write_completions(gen, cmd, &mut sink);
+            self.write_completions(generator, cmd, &mut sink);
         }
 
         #[cfg(not(test))]
         {
             let mut stdout = io::stdout();
-            self.write_completions(gen, cmd, &mut stdout);
+            self.write_completions(generator, cmd, &mut stdout);
         }
     }
 
     fn write_completions<G: Generator, W: Write>(
         &self,
-        gen: G,
+        generator: G,
         cmd: &mut clap::Command,
         writer: &mut W,
     ) {
-        generate(gen, cmd, cmd.get_name().to_string(), writer);
+        generate(generator, cmd, cmd.get_name().to_string(), writer);
     }
 
     #[cfg(test)]

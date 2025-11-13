@@ -645,18 +645,16 @@ impl<'a> DashboardApp<'a> {
     }
 
     fn enter_directory(&mut self) -> FugaResult<()> {
-        if let Some(entry) = self.visible_selection() {
-            if entry.is_dir {
-                let target_path = entry.abs_path.clone();
-                self.current_dir = PathBuf::from(&target_path);
-                self.filter_input.clear();
-                self.filter_mode = false;
-                self.reload_directory()?;
-                self.status = Some(StatusMessage {
-                    text: format!("Entered {}", target_path),
-                    is_error: false,
-                });
-            }
+        if let Some(entry) = self.visible_selection().filter(|entry| entry.is_dir) {
+            let target_path = entry.abs_path.clone();
+            self.current_dir = PathBuf::from(&target_path);
+            self.filter_input.clear();
+            self.filter_mode = false;
+            self.reload_directory()?;
+            self.status = Some(StatusMessage {
+                text: format!("Entered {}", target_path),
+                is_error: false,
+            });
         }
         Ok(())
     }
@@ -817,27 +815,24 @@ impl<'a> DashboardApp<'a> {
             popup.items = items;
             popup.rebuild_visible();
 
-            if let Some(prev) = previous {
-                if let Some(idx) = popup.items.iter().position(|item| item == &prev) {
-                    if let Some(pos) = popup.visible_indices.iter().position(|value| *value == idx)
-                    {
-                        popup.selection = pos;
-                        popup.list_state.select(Some(popup.selection));
-                    }
-                }
+            if let Some(prev) = previous
+                && let Some(idx) = popup.items.iter().position(|item| item == &prev)
+                && let Some(pos) = popup.visible_indices.iter().position(|value| *value == idx)
+            {
+                popup.selection = pos;
+                popup.list_state.select(Some(popup.selection));
             }
         }
         Ok(())
     }
 
     fn select_preset(&mut self, name: &str) {
-        if let Some(popup) = self.preset_ui.as_mut() {
-            if let Some(idx) = popup.items.iter().position(|item| item == name) {
-                if let Some(pos) = popup.visible_indices.iter().position(|value| *value == idx) {
-                    popup.selection = pos;
-                    popup.list_state.select(Some(pos));
-                }
-            }
+        if let Some(popup) = self.preset_ui.as_mut()
+            && let Some(idx) = popup.items.iter().position(|item| item == name)
+            && let Some(pos) = popup.visible_indices.iter().position(|value| *value == idx)
+        {
+            popup.selection = pos;
+            popup.list_state.select(Some(pos));
         }
     }
 
@@ -898,10 +893,10 @@ impl<'a> DashboardApp<'a> {
                 }
             }
             KeyCode::Char('D') | KeyCode::Char('x') => {
-                if let Some(item) = popup.selected_item().map(|s| s.to_string()) {
-                    if !popup.is_create_new(&item) {
-                        self.confirmation = Some(Confirmation::PresetDelete { name: item });
-                    }
+                if let Some(item) = popup.selected_item().map(|s| s.to_string())
+                    && !popup.is_create_new(&item)
+                {
+                    self.confirmation = Some(Confirmation::PresetDelete { name: item });
                 }
             }
             _ => {}
@@ -1402,20 +1397,22 @@ mod tests {
         app.toggle_mark().expect("mark toggle should succeed");
         assert_eq!(config.current_marks(), vec![entry_path.clone()]);
         assert_eq!(app.marks, vec![entry_path.clone()]);
-        assert!(app
-            .status
-            .as_ref()
-            .and_then(|status| status.text.strip_prefix("Marked"))
-            .is_some());
+        assert!(
+            app.status
+                .as_ref()
+                .and_then(|status| status.text.strip_prefix("Marked"))
+                .is_some()
+        );
 
         app.toggle_mark().expect("mark removal should succeed");
         assert!(config.current_marks().is_empty());
         assert!(app.marks.is_empty());
-        assert!(app
-            .status
-            .as_ref()
-            .and_then(|status| status.text.strip_prefix("Removed mark"))
-            .is_some());
+        assert!(
+            app.status
+                .as_ref()
+                .and_then(|status| status.text.strip_prefix("Removed mark"))
+                .is_some()
+        );
     }
 
     #[test]

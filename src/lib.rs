@@ -8,7 +8,7 @@ pub mod ui;
 
 pub use config::{AppConfig, FileConfigRepository};
 pub use error::{FugaError, FugaResult};
-pub use fuga::{get_version, FileInfo, TargetType, APP_NAME};
+pub use fuga::{APP_NAME, FileInfo, TargetType, get_version};
 
 pub use traits::{ConfigRepository, FileSystemService, PathService, UIService};
 

@@ -1,6 +1,6 @@
 use assert_cmd::Command;
-use assert_fs::prelude::*;
 use assert_fs::TempDir;
+use assert_fs::prelude::*;
 use predicates::prelude::*;
 use std::fs;
 use std::path::Path;
@@ -273,7 +273,9 @@ fn legacy_single_target_is_migrated_to_targets() {
 
     let stored = fs::read_to_string(config_root.join("fuga.toml")).unwrap();
     assert!(stored.contains("targets"));
-    assert!(!stored
-        .lines()
-        .any(|line| line.trim_start().starts_with("target =")));
+    assert!(
+        !stored
+            .lines()
+            .any(|line| line.trim_start().starts_with("target ="))
+    );
 }
