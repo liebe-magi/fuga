@@ -106,7 +106,7 @@ jobs:
           VERSION="$(cargo run -- version)"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
       - name: Upload artifact
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: build-${{ matrix.target }}-${{steps.properties.outputs.version}}
           path: target/${{ matrix.target }}/release/fuga
@@ -148,7 +148,7 @@ jobs:
         run: |
           echo '${{ steps.createDraftRelease.outputs.upload_url }}' > release_upload_url.txt
       - name: Upload `release_upload_url.txt`
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -173,13 +173,13 @@ jobs:
     needs: [build, draft-release]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
         with:
           name: draft-release
       - id: upload-url
         run: |
           echo "url=$(cat release_upload_url.txt)" >> $GITHUB_OUTPUT
-      - uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
         with:
           name: build-${{ matrix.target }}-${{ needs.build.outputs.version }}
           path: build/
